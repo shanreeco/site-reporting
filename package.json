@@ -1,0 +1,14 @@
+{
+  "name": "site-reporting",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": { "dev": "vite", "build": "vite build", "preview": "vite preview --port 4173" },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^2.12.7",
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "devDependencies": { "vite": "^5.4.0", "@vitejs/plugin-react": "^4.2.0" }
+}
