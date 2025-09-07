@@ -42,7 +42,7 @@ function download(filename, text) {
 function toCSV(rows, headerOrder) {
   if (!rows || rows.length === 0) return "";
   const headers = headerOrder ?? Object.keys(rows[0]);
-  const NL = String.fromCharCode(10); // safe newline (avoids editor wrapping)
+  const NL = String.fromCharCode(10); // safe newline
   const esc = (v) => {
     const s = v == null ? "" : String(v);
     return (s.includes(",") || s.includes(NL) || s.includes('"'))
