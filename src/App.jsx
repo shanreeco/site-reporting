@@ -91,12 +91,37 @@ function AuthPage(){
   );
 }
 
-// --------- Root App ---------
+// --------- Root App + Debug ---------
+function ErrorBox({title="Error", message=""}){
+  if (!message) return null;
+  return (
+    <div className="min-h-screen grid place-items-center bg-red-50">
+      <div className="max-w-xl w-full border border-red-300 bg-white rounded-2xl p-4 text-red-700">
+        <h2 className="font-semibold mb-2">{title}</h2>
+        <pre className="whitespace-pre-wrap text-xs">{String(message)}</pre>
+        <button className="mt-3 px-3 py-2 border rounded" onClick={()=>location.reload()}>Reload</button>
+      </div>
+    </div>
+  );
+}
+
 export default function App(){
   const { session, profile, err } = useSessionProfile();
+  // Global runtime error capture to avoid blank screen
+  const [fatal, setFatal] = useState("");
+  useEffect(()=>{
+    const onErr = (e)=> setFatal(e?.error?.stack || e?.message || String(e));
+    const onRej = (e)=> setFatal(e?.reason?.stack || e?.reason?.message || String(e.reason ?? e));
+    window.addEventListener('error', onErr);
+    window.addEventListener('unhandledrejection', onRej);
+    return ()=>{ window.removeEventListener('error', onErr); window.removeEventListener('unhandledrejection', onRej); };
+  },[]);
+  if (fatal) return <ErrorBox title="Runtime error" message={fatal} />;
+
   if (!session) return <AuthPage/>;
   if (profile === undefined) return <div className="min-h-screen grid place-items-center">Loading profile…</div>;
-  if (err) return <div className="min-h-screen grid place-items-center text-red-700">{err}</div>;
+  if (err) return <ErrorBox title="Supabase error" message={err} />;
+
   return (
     <div className="min-h-screen bg-neutral-50 p-6">
       <h1 className="text-xl font-semibold mb-4">Welcome {profile.email} ({profile.role})</h1>
