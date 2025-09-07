@@ -299,7 +299,9 @@ function IssuesLog({isAdmin, inRange}){
         <Input label="Location / Zone" value={draft.location} onChange={v=>setDraft({...draft,location:v})} />
         <TextArea label="Description" value={draft.description} onChange={v=>setDraft({...draft,description:v})} />
         <Select label="Severity" value={draft.severity} onChange={v=>setDraft({...draft,severity:v})} options={["Low","Medium","High","Critical"]} />
-        <Select label="Status" value={draft.status} onChange={v=>setDraft({...draft,status	v=>setDraft({...draft,owner:v})} />
+        <Select label="Status" value={draft.status} onChange={v=>setDraft({...draft,status:v})} options={["Open","In Progress","Blocked","Closed"]} />
+        <Input label="Raised By" value={draft.raised_by} onChange={v=>setDraft({...draft,raised_by:v})} />
+        <Input label="Owner" value={draft.owner} onChange={v=>setDraft({...draft,owner:v})} />
         <Input label="Due By" type="date" value={draft.due_by} onChange={v=>setDraft({...draft,due_by:v})} />
         <label className="text-sm"><div className="text-xs text-neutral-500 mb-1">Photo</div><input type="file" accept="image/*" onChange={e=>setFile(e.target.files?.[0]||null)} /></label>
       </FormGrid>
