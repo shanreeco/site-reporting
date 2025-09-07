@@ -44,8 +44,7 @@ function toCSV(rows, headerOrder) {
   const headers = headerOrder ?? Object.keys(rows[0]);
   const esc = (v) => {
     const s = v == null ? "" : String(v);
-    return (s.includes(",") || s.includes("\n") || s.includes('"'))
-      ? '"' + s.replaceAll('"', '""') + '"'
+return (s.includes(",") || s.includes("\n") || s.includes('"')) ? '"' + s.replaceAll('"', '""') + '"' : s;
       : s;
   };
   const out = [headers.join(",")];
