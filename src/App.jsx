@@ -242,130 +242,204 @@ function Dashboard({ profile }) {
     </div>
   );
 }
+// CORRECTED CODE - PASTE THIS ENTIRE BLOCK
+
 // ========= Sections =========
-function ConcreteLog({isAdmin}){
+function ConcreteLog({ isAdmin }) {
   const { rows, insert, remove, clearAll } = useTable('concrete');
-  const [d,setD]=React.useState({ date:'', pour_id:'', location:'', element:'', volume:'', mix:'', supplier:'', start_time:'', end_time:'', cubes:'', supervisor:'', notes:'' });
-  const add = async()=>{ if(!d.date||!d.location||!d.element) return alert('Date, Location, Element required'); await insert(d); setD({ date:'', pour_id:'', location:'', element:'', volume:'', mix:'', supplier:'', start_time:'', end_time:'', cubes:'', supervisor:'', notes:'' }); };
-  const exportCSV = ()=>{ if(!isAdmin) return; const headers=[\"id\",\"user_id\",\"date\",\"pour_id\",\"location\",\"element\",\"volume\",\"mix\",\"supplier\",\"start_time\",\"end_time\",\"cubes\",\"supervisor\",\"notes\",\"created_at\"]; download(`concrete_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
+  const [d, setD] = React.useState({ date: '', pour_id: '', location: '', element: '', volume: '', mix: '', supplier: '', start_time: '', end_time: '', cubes: '', supervisor: '', notes: '' });
+  
+  const add = async () => {
+    if (!d.date || !d.location || !d.element) return alert('Date, Location, Element required');
+    await insert(d);
+    setD({ date: '', pour_id: '', location: '', element: '', volume: '', mix: '', supplier: '', start_time: '', end_time: '', cubes: '', supervisor: '', notes: '' });
+  };
+
+  const exportCSV = () => {
+    if (!isAdmin) return;
+    const headers = ["id", "user_id", "date", "pour_id", "location", "element", "volume", "mix", "supplier", "start_time", "end_time", "cubes", "supervisor", "notes", "created_at"];
+    download(`concrete_${new Date().toISOString().slice(0, 10)}.csv`, toCSV(rows, headers));
+  };
+
   return (
-    <section className=\"grid md:grid-cols-3 gap-4\">
-      <div><Card title=\"Add Concrete\"><FormGrid>
-        <Input label=\"Date\" type=\"date\" value={d.date} onChange={v=>setD({...d,date:v})} />
-        <Input label=\"Pour ID / Ref\" value={d.pour_id} onChange={v=>setD({...d,pour_id:v})} />
-        <Input label=\"Location / Zone\" value={d.location} onChange={v=>setD({...d,location:v})} />
-        <Input label=\"Element\" value={d.element} onChange={v=>setD({...d,element:v})} />
-        <Input label=\"Volume (m³)\" value={d.volume} onChange={v=>setD({...d,volume:v})} />
-        <Input label=\"Mix / Grade\" value={d.mix} onChange={v=>setD({...d,mix:v})} />
-        <Input label=\"Supplier\" value={d.supplier} onChange={v=>setD({...d,supplier:v})} />
-        <Input label=\"Start Time\" type=\"time\" value={d.start_time} onChange={v=>setD({...d,start_time:v})} />
-        <Input label=\"End Time\" type=\"time\" value={d.end_time} onChange={v=>setD({...d,end_time:v})} />
-        <Input label=\"Cube Samples (qty)\" value={d.cubes} onChange={v=>setD({...d,cubes:v})} />
-        <Input label=\"Supervisor\" value={d.supervisor} onChange={v=>setD({...d,supervisor:v})} />
-        <TextArea label=\"Notes\" value={d.notes} onChange={v=>setD({...d,notes:v})} />
-      </FormGrid>
-      <div className=\"mt-3 flex gap-2 items-center\">
-        <button onClick={add} className=\"px-3 py-2 rounded-lg bg-neutral-900 text-white\">Add</button>
-        {isAdmin && <button onClick={exportCSV} className=\"px-3 py-2 rounded-lg border\">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className=\"px-3 py-2 rounded-lg border border-red-300 text-red-700\">Clear All</button>}
-      </div></Card></div>
-      <div className=\"md:col-span-2\"><Card title={`Records (${rows.length})`}><DataTable columns={[\"date\",\"pour_id\",\"location\",\"element\",\"volume\",\"mix\",\"supplier\",\"start_time\",\"end_time\",\"cubes\",\"supervisor\",\"notes\"]} rows={rows} onDelete={remove} /></Card></div>
+    <section className="grid md:grid-cols-3 gap-4">
+      <div>
+        <Card title="Add Concrete"><FormGrid>
+          <Input label="Date" type="date" value={d.date} onChange={v => setD({ ...d, date: v })} />
+          <Input label="Pour ID / Ref" value={d.pour_id} onChange={v => setD({ ...d, pour_id: v })} />
+          <Input label="Location / Zone" value={d.location} onChange={v => setD({ ...d, location: v })} />
+          <Input label="Element" value={d.element} onChange={v => setD({ ...d, element: v })} />
+          <Input label="Volume (m³)" value={d.volume} onChange={v => setD({ ...d, volume: v })} />
+          <Input label="Mix / Grade" value={d.mix} onChange={v => setD({ ...d, mix: v })} />
+          <Input label="Supplier" value={d.supplier} onChange={v => setD({ ...d, supplier: v })} />
+          <Input label="Start Time" type="time" value={d.start_time} onChange={v => setD({ ...d, start_time: v })} />
+          <Input label="End Time" type="time" value={d.end_time} onChange={v => setD({ ...d, end_time: v })} />
+          <Input label="Cube Samples (qty)" value={d.cubes} onChange={v => setD({ ...d, cubes: v })} />
+          <Input label="Supervisor" value={d.supervisor} onChange={v => setD({ ...d, supervisor: v })} />
+          <TextArea label="Notes" value={d.notes} onChange={v => setD({ ...d, notes: v })} />
+        </FormGrid>
+        <div className="mt-3 flex gap-2 items-center">
+          <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
+          {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
+          {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
+        </div></Card>
+      </div>
+      <div className="md:col-span-2">
+        <Card title={`Records (${rows.length})`}>
+          <DataTable columns={["date", "pour_id", "location", "element", "volume", "mix", "supplier", "start_time", "end_time", "cubes", "supervisor", "notes"]} rows={rows} onDelete={remove} />
+        </Card>
+      </div>
     </section>
   );
 }
 
-function ManpowerLog({isAdmin}){
+function ManpowerLog({ isAdmin }) {
   const { rows, insert, remove, clearAll } = useTable('manpower');
-  const [d,setD]=React.useState({ date:'', contractor:'', trade:'', workers:'', hours:'', zone:'', supervisor:'', notes:'' });
-  const add = async()=>{ if(!d.date||!d.contractor||!d.trade) return alert('Date, Contractor, Trade required'); await insert(d); setD({ date:'', contractor:'', trade:'', workers:'', hours:'', zone:'', supervisor:'', notes:'' }); };
-  const exportCSV = ()=>{ if(!isAdmin) return; const headers=[\"id\",\"user_id\",\"date\",\"contractor\",\"trade\",\"workers\",\"hours\",\"zone\",\"supervisor\",\"notes\",\"created_at\"]; download(`manpower_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
+  const [d, setD] = React.useState({ date: '', contractor: '', trade: '', workers: '', hours: '', zone: '', supervisor: '', notes: '' });
+  
+  const add = async () => {
+    if (!d.date || !d.contractor || !d.trade) return alert('Date, Contractor, Trade required');
+    await insert(d);
+    setD({ date: '', contractor: '', trade: '', workers: '', hours: '', zone: '', supervisor: '', notes: '' });
+  };
+  
+  const exportCSV = () => {
+    if (!isAdmin) return;
+    const headers = ["id", "user_id", "date", "contractor", "trade", "workers", "hours", "zone", "supervisor", "notes", "created_at"];
+    download(`manpower_${new Date().toISOString().slice(0, 10)}.csv`, toCSV(rows, headers));
+  };
+
   return (
-    <section className=\"grid md:grid-cols-3 gap-4\">
-      <div><Card title=\"Add Manpower\"><FormGrid>
-        <Input label=\"Date\" type=\"date\" value={d.date} onChange={v=>setD({...d,date:v})} />
-        <Input label=\"Contractor\" value={d.contractor} onChange={v=>setD({...d,contractor:v})} />
-        <Input label=\"Trade\" value={d.trade} onChange={v=>setD({...d,trade:v})} />
-        <Input label=\"Workers (count)\" value={d.workers} onChange={v=>setD({...d,workers:v})} />
-        <Input label=\"Hours (per worker)\" value={d.hours} onChange={v=>setD({...d,hours:v})} />
-        <Input label=\"Zone / Area\" value={d.zone} onChange={v=>setD({...d,zone:v})} />
-        <Input label=\"Supervisor\" value={d.supervisor} onChange={v=>setD({...d,supervisor:v})} />
-        <TextArea label=\"Notes\" value={d.notes} onChange={v=>setD({...d,notes:v})} />
-      </FormGrid>
-      <div className=\"mt-3 flex gap-2 items-center\">
-        <button onClick={add} className=\"px-3 py-2 rounded-lg bg-neutral-900 text-white\">Add</button>
-        {isAdmin && <button onClick={exportCSV} className=\"px-3 py-2 rounded-lg border\">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className=\"px-3 py-2 rounded-lg border border-red-300 text-red-700\">Clear All</button>}
-      </div></Card></div>
-      <div className=\"md:col-span-2\"><Card title={`Records (${rows.length})`}><DataTable columns={[\"date\",\"contractor\",\"trade\",\"workers\",\"hours\",\"zone\",\"supervisor\",\"notes\"]} rows={rows} onDelete={remove} /></Card></div>
+    <section className="grid md:grid-cols-3 gap-4">
+      <div>
+        <Card title="Add Manpower"><FormGrid>
+          <Input label="Date" type="date" value={d.date} onChange={v => setD({ ...d, date: v })} />
+          <Input label="Contractor" value={d.contractor} onChange={v => setD({ ...d, contractor: v })} />
+          <Input label="Trade" value={d.trade} onChange={v => setD({ ...d, trade: v })} />
+          <Input label="Workers (count)" value={d.workers} onChange={v => setD({ ...d, workers: v })} />
+          <Input label="Hours (per worker)" value={d.hours} onChange={v => setD({ ...d, hours: v })} />
+          <Input label="Zone / Area" value={d.zone} onChange={v => setD({ ...d, zone: v })} />
+          <Input label="Supervisor" value={d.supervisor} onChange={v => setD({ ...d, supervisor: v })} />
+          <TextArea label="Notes" value={d.notes} onChange={v => setD({ ...d, notes: v })} />
+        </FormGrid>
+        <div className="mt-3 flex gap-2 items-center">
+          <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
+          {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
+          {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
+        </div></Card>
+      </div>
+      <div className="md:col-span-2">
+        <Card title={`Records (${rows.length})`}>
+          <DataTable columns={["date", "contractor", "trade", "workers", "hours", "zone", "supervisor", "notes"]} rows={rows} onDelete={remove} />
+        </Card>
+      </div>
     </section>
   );
 }
 
-function IssuesLog({isAdmin}){
+function IssuesLog({ isAdmin }) {
   const { rows, insert, remove, clearAll } = useTable('issues');
-  const [d,setD]=React.useState({ date:'', location:'', description:'', severity:'', status:'Open', raised_by:'', owner:'', due_by:'', photo_url:'' });
-  const [file,setFile]=React.useState(null);
-  const add = async()=>{
-    if(!d.date||!d.location||!d.description) return alert('Date, Location, Description required');
-    let url=d.photo_url; if(file){ try{ url = await uploadToBucket('issue-photos', file);}catch(e){ alert(e.message);} }
-    await insert({ ...d, photo_url:url }); setD({ date:'', location:'', description:'', severity:'', status:'Open', raised_by:'', owner:'', due_by:'', photo_url:'' }); setFile(null);
+  const [d, setD] = React.useState({ date: '', location: '', description: '', severity: '', status: 'Open', raised_by: '', owner: '', due_by: '', photo_url: '' });
+  const [file, setFile] = React.useState(null);
+  
+  const add = async () => {
+    if (!d.date || !d.location || !d.description) return alert('Date, Location, Description required');
+    let url = d.photo_url;
+    if (file) { try { url = await uploadToBucket('issue-photos', file); } catch (e) { alert(e.message); } }
+    await insert({ ...d, photo_url: url });
+    setD({ date: '', location: '', description: '', severity: '', status: 'Open', raised_by: '', owner: '', due_by: '', photo_url: '' });
+    setFile(null);
   };
-  const exportCSV = ()=>{ if(!isAdmin) return; const headers=[\"id\",\"user_id\",\"date\",\"location\",\"description\",\"severity\",\"status\",\"raised_by\",\"owner\",\"due_by\",\"photo_url\",\"created_at\"]; download(`issues_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
+
+  const exportCSV = () => {
+    if (!isAdmin) return;
+    const headers = ["id", "user_id", "date", "location", "description", "severity", "status", "raised_by", "owner", "due_by", "photo_url", "created_at"];
+    download(`issues_${new Date().toISOString().slice(0, 10)}.csv`, toCSV(rows, headers));
+  };
+
   return (
-    <section className=\"grid md:grid-cols-3 gap-4\">
-      <div><Card title=\"Add Issue\"><FormGrid>
-        <Input label=\"Date\" type=\"date\" value={d.date} onChange={v=>setD({...d,date:v})} />
-        <Input label=\"Location / Zone\" value={d.location} onChange={v=>setD({...d,location:v})} />
-        <TextArea label=\"Description\" value={d.description} onChange={v=>setD({...d,description:v})} />
-        <Select label=\"Severity\" value={d.severity} onChange={v=>setD({...d,severity:v})} options={[\"Low\",\"Medium\",\"High\",\"Critical\"]} />
-        <Select label=\"Status\" value={d.status} onChange={v=>setD({...d,status:v})} options={[\"Open\",\"In Progress\",\"Blocked\",\"Closed\"]} />
-        <Input label=\"Raised By\" value={d.raised_by} onChange={v=>setD({...d,raised_by:v})} />
-        <Input label=\"Owner\" value={d.owner} onChange={v=>setD({...d,owner:v})} />
-        <Input label=\"Due By\" type=\"date\" value={d.due_by} onChange={v=>setD({...d,due_by:v})} />
-        <label className=\"text-sm\"><div className=\"text-xs text-neutral-500 mb-1\">Photo</div><input type=\"file\" accept=\"image/*\" onChange={e=>setFile(e.target.files?.[0]||null)} /></label>
-      </FormGrid>
-      <div className=\"mt-3 flex gap-2 items-center\">
-        <button onClick={add} className=\"px-3 py-2 rounded-lg bg-neutral-900 text-white\">Add</button>
-        {isAdmin && <button onClick={exportCSV} className=\"px-3 py-2 rounded-lg border\">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className=\"px-3 py-2 rounded-lg border border-red-300 text-red-700\">Clear All</button>}
-      </div></Card></div>
-      <div className=\"md:col-span-2\"><Card title={`Records (${rows.length})`}><DataTable columns={[\"date\",\"location\",\"description\",\"severity\",\"status\",\"raised_by\",\"owner\",\"due_by\",\"photo_url\"]} rows={rows} onDelete={remove} /></Card></div>
+    <section className="grid md:grid-cols-3 gap-4">
+      <div>
+        <Card title="Add Issue"><FormGrid>
+          <Input label="Date" type="date" value={d.date} onChange={v => setD({ ...d, date: v })} />
+          <Input label="Location / Zone" value={d.location} onChange={v => setD({ ...d, location: v })} />
+          <TextArea label="Description" value={d.description} onChange={v => setD({ ...d, description: v })} />
+          <Select label="Severity" value={d.severity} onChange={v => setD({ ...d, severity: v })} options={["Low", "Medium", "High", "Critical"]} />
+          <Select label="Status" value={d.status} onChange={v => setD({ ...d, status: v })} options={["Open", "In Progress", "Blocked", "Closed"]} />
+          <Input label="Raised By" value={d.raised_by} onChange={v => setD({ ...d, raised_by: v })} />
+          <Input label="Owner" value={d.owner} onChange={v => setD({ ...d, owner: v })} />
+          <Input label="Due By" type="date" value={d.due_by} onChange={v => setD({ ...d, due_by: v })} />
+          <label className="text-sm"><div className="text-xs text-neutral-500 mb-1">Photo</div><input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)} /></label>
+        </FormGrid>
+        <div className="mt-3 flex gap-2 items-center">
+          <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
+          {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
+          {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
+        </div></Card>
+      </div>
+      <div className="md:col-span-2">
+        <Card title={`Records (${rows.length})`}>
+          <DataTable columns={["date", "location", "description", "severity", "status", "raised_by", "owner", "due_by", "photo_url"]} rows={rows} onDelete={remove} />
+        </Card>
+      </div>
     </section>
   );
 }
 
-function MaterialsLog({isAdmin}){
+function MaterialsLog({ isAdmin }) {
   const { rows, insert, remove, clearAll } = useTable('materials');
-  const [d,setD]=React.useState({ date:'', type:'Request', item:'', spec:'', qty:'', unit:'', needed_by:'', supplier:'', po:'', status:'Pending', location:'', requester:'', photo_url:'' });
-  const [file,setFile]=React.useState(null);
-  const add = async()=>{
-    if(!d.date||!d.item) return alert('Date and Item required');
-    let url=d.photo_url; if(file){ try{ url = await uploadToBucket('delivery-photos', file);}catch(e){ alert(e.message);} }
-    await insert({ ...d, photo_url:url }); setD({ date:'', type:'Request', item:'', spec:'', qty:'', unit:'', needed_by:'', supplier:'', po:'', status:'Pending', location:'', requester:'', photo_url:'' }); setFile(null);
+  const [d, setD] = React.useState({ date: '', type: 'Request', item: '', spec: '', qty: '', unit: '', needed_by: '', supplier: '', po: '', status: 'Pending', location: '', requester: '', photo_url: '' });
+  const [file, setFile] = React.useState(null);
+  
+  const add = async () => {
+    if (!d.date || !d.item) return alert('Date and Item required');
+    let url = d.photo_url;
+    if (file) { try { url = await uploadToBucket('delivery-photos', file); } catch (e) { alert(e.message); } }
+    await insert({ ...d, photo_url: url });
+    setD({ date: '', type: 'Request', item: '', spec: '', qty: '', unit: '', needed_by: '', supplier: '', po: '', status: 'Pending', location: '', requester: '', photo_url: '' });
+    setFile(null);
   };
-  const exportCSV = ()=>{ if(!isAdmin) return; const headers=[\"id\",\"user_id\",\"date\",\"type\",\"item\",\"spec\",\"qty\",\"unit\",\"needed_by\",\"supplier\",\"po\",\"status\",\"location\",\"requester\",\"photo_url\",\"created_at\"]; download(`materials_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
+  
+  const exportCSV = () => {
+    if (!isAdmin) return;
+    const headers = ["id", "user_id", "date", "type", "item", "spec", "qty", "unit", "needed_by", "supplier", "po", "status", "location", "requester", "photo_url", "created_at"];
+    download(`materials_${new Date().toISOString().slice(0, 10)}.csv`, toCSV(rows, headers));
+  };
+
   return (
-    <section className=\"grid md:grid-cols-3 gap-4\">
-      <div><Card title=\"Add Material Record\"><FormGrid>
-        <Input label=\"Date\" type=\"date\" value={d.date} onChange={v=>setD({...d,date:v})} />
-        <Select label=\"Type\" value={d.type} onChange={v=>setD({...d,type:v})} options={[\"Request\",\"Delivery\"]} />
-        <Input label=\"Item\" value={d.item} onChange={v=>setD({...d,item:v})} />
-        <Input label=\"Specification\" value={d.spec} onChange={v=>setD({...d,spec:v})} />
-        <div className=\"grid grid-cols-2 gap-2\"><Input label=\"Qty\" value={d.qty} onChange={v=>setD({...d,qty:v})} /><Input label=\"Unit\" value={d.unit} onChange={v=>setD({...d,unit:v})} /></div>
-        <Input label=\"Needed By\" type=\"date\" value={d.needed_by} onChange={v=>setD({...d,needed_by:v})} />
-        <Input label=\"Supplier\" value={d.supplier} onChange={v=>setD({...d,supplier:v})} />
-        <Input label=\"PO / Ref\" value={d.po} onChange={v=>setD({...d,po:v})} />
-        <Select label=\"Status\" value={d.status} onChange={v=>setD({...d,status:v})} options={[\"Pending\",\"Approved\",\"Ordered\",\"Delivered\",\"Cancelled\"]} />
-        <Input label=\"Location / Zone\" value={d.location} onChange={v=>setD({...d,location:v})} />
-        <Input label=\"Requester\" value={d.requester} onChange={v=>setD({...d,requester:v})} />
-        <label className=\"text-sm\"><div className=\"text-xs text-neutral-500 mb-1\">Delivery / MR Photo</div><input type=\"file\" accept=\"image/*\" onChange={e=>setFile(e.target.files?.[0]||null)} /></label>
-      </FormGrid>
-      <div className=\"mt-3 flex gap-2 items-center\">
-        <button onClick={add} className=\"px-3 py-2 rounded-lg bg-neutral-900 text-white\">Add</button>
-        {isAdmin && <button onClick={exportCSV} className=\"px-3 py-2 rounded-lg border\">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className=\"px-3 py-2 rounded-lg border border-red-300 text-red-700\">Clear All</button>}
-      </div></Card></div>
-      <div className=\"md:col-span-2\"><Card title={`Records (${rows.length})`}><DataTable columns={[\"date\",\"type\",\"item\",\"spec\",\"qty\",\"unit\",\"needed_by\",\"supplier\",\"po\",\"status\",\"location\",\"requester\",\"photo_url\"]} rows={rows} onDelete={remove} /></Card></div>
+    <section className="grid md:grid-cols-3 gap-4">
+      <div>
+        <Card title="Add Material Record"><FormGrid>
+          <Input label="Date" type="date" value={d.date} onChange={v => setD({ ...d, date: v })} />
+          <Select label="Type" value={d.type} onChange={v => setD({ ...d, type: v })} options={["Request", "Delivery"]} />
+          <Input label="Item" value={d.item} onChange={v => setD({ ...d, item: v })} />
+          <Input label="Specification" value={d.spec} onChange={v => setD({ ...d, spec: v })} />
+          <div className="grid grid-cols-2 gap-2">
+            <Input label="Qty" value={d.qty} onChange={v => setD({ ...d, qty: v })} />
+            <Input label="Unit" value={d.unit} onChange={v => setD({ ...d, unit: v })} />
+          </div>
+          <Input label="Needed By" type="date" value={d.needed_by} onChange={v => setD({ ...d, needed_by: v })} />
+          <Input label="Supplier" value={d.supplier} onChange={v => setD({ ...d, supplier: v })} />
+          <Input label="PO / Ref" value={d.po} onChange={v => setD({ ...d, po: v })} />
+          <Select label="Status" value={d.status} onChange={v => setD({ ...d, status: v })} options={["Pending", "Approved", "Ordered", "Delivered", "Cancelled"]} />
+          <Input label="Location / Zone" value={d.location} onChange={v => setD({ ...d, location: v })} />
+          <Input label="Requester" value={d.requester} onChange={v => setD({ ...d, requester: v })} />
+          <label className="text-sm">
+            <div className="text-xs text-neutral-500 mb-1">Delivery / MR Photo</div>
+            <input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)} />
+          </label>
+        </FormGrid>
+        <div className="mt-3 flex gap-2 items-center">
+          <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
+          {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
+          {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
+        </div></Card>
+      </div>
+      <div className="md:col-span-2">
+        <Card title={`Records (${rows.length})`}>
+          <DataTable columns={["date", "type", "item", "spec", "qty", "unit", "needed_by", "supplier", "po", "status", "location", "requester", "photo_url"]} rows={rows} onDelete={remove} />
+        </Card>
+      </div>
     </section>
   );
 }
