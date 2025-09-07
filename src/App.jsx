@@ -129,33 +129,62 @@ function useTable(table) {
   return { rows, loading, error, insert, remove, clearAll };
 }
 
+// CORRECTED CODE
+
 // ========= Reusable UI =========
-function Card({title, children}){return (<div className=\"bg-white border rounded-2xl p-4 shadow-sm\">{title && <h3 className=\"text-lg font-semibold mb-3\">{title}</h3>}{children}</div>);} 
-function FormGrid({children}){return <div className=\"grid grid-cols-1 gap-2\">{children}</div>;}
-function Input({label, value, onChange, type=\"text\"}){return (<label className=\"text-sm\"><div className=\"text-xs text-neutral-500 mb-1\">{label}</div><input type={type} value={value||\"\"} onChange={e=>onChange(e.target.value)} className=\"w-full border rounded-lg px-3 py-2\" /></label>);} 
-function TextArea({label, value, onChange}){return (<label className=\"text-sm\"><div className=\"text-xs text-neutral-500 mb-1\">{label}</div><textarea value={value||\"\"} onChange={e=>onChange(e.target.value)} className=\"w-full border rounded-lg px-3 py-2 h-24\" /></label>);} 
-function Select({label, value, onChange, options}){return (<label className=\"text-sm\"><div className=\"text-xs text-neutral-500 mb-1\">{label}</div><select value={value||\"\"} onChange={e=>onChange(e.target.value)} className=\"w-full px-3 py-2 bg-white border rounded-lg\"><option value=\"\">-- Select --</option>{options.map(opt=> <option key={opt} value={opt}>{opt}</option>)}</select></label>);} 
-function DataTable({columns, rows, onDelete}){
+function Card({ title, children }) {
   return (
-    <div className=\"overflow-auto border rounded-xl\">
-      <table className=\"min-w-full text-sm\">
-        <thead className=\"bg-neutral-50\">
-          <tr>
-            {columns.map(c=> <th key={c} className=\"text-left px-3 py-2 border-b whitespace-nowrap capitalize\">{c.replaceAll('_',' ')}</th>)}
-            <th className=\"px-3 py-2 border-b text-right\">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(r=> (
-            <tr key={r.id} className=\"odd:bg-white even:bg-neutral-50\">
-              {columns.map(c=> (<td key={c} className=\"px-3 py-2 border-b align-top whitespace-pre-wrap\">{String(r[c]??'')}</td>))}
-              <td className=\"px-3 py-2 border-b text-right\"><button onClick={()=>onDelete(r.id)} className=\"text-red-600 hover:underline\">Delete</button></td>
-            </tr>
-          ))}
-          {rows.length===0 && <tr><td className=\"px-3 py-6 text-center text-neutral-500\" colSpan={columns.length+1}>No data</td></tr>}
-        </tbody>
-      </table>
+    <div className="bg-white border rounded-2xl p-4 shadow-sm">
+      {title && <h3 className="text-lg font-semibold mb-3">{title}</h3>}
+      {children}
     </div>
+  );
+}
+
+function FormGrid({ children }) {
+  return <div className="grid grid-cols-1 gap-2">{children}</div>;
+}
+
+function Input({ label, value, onChange, type = "text" }) {
+  return (
+    <label className="text-sm">
+      <div className="text-xs text-neutral-500 mb-1">{label}</div>
+      <input 
+        type={type} 
+        value={value || ""} 
+        onChange={e => onChange(e.target.value)} 
+        className="w-full border rounded-lg px-3 py-2" 
+      />
+    </label>
+  );
+}
+
+function TextArea({ label, value, onChange }) {
+  return (
+    <label className="text-sm">
+      <div className="text-xs text-neutral-500 mb-1">{label}</div>
+      <textarea 
+        value={value || ""} 
+        onChange={e => onChange(e.target.value)} 
+        className="w-full border rounded-lg px-3 py-2 h-24" 
+      />
+    </label>
+  );
+}
+
+function Select({ label, value, onChange, options }) {
+  return (
+    <label className="text-sm">
+      <div className="text-xs text-neutral-500 mb-1">{label}</div>
+      <select 
+        value={value || ""} 
+        onChange={e => onChange(e.target.value)} 
+        className="w-full px-3 py-2 bg-white border rounded-lg"
+      >
+        <option value="">-- Select --</option>
+        {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+      </select>
+    </label>
   );
 }
 
