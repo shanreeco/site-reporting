@@ -15,12 +15,28 @@ function useSessionProfile(){
   const [profile,setProfile]=useState(undefined);
   const [err,setErr]=useState("");
 
-  useEffect(()=>{
-    supabase.auth.getSession().then(({data})=> setSession(data.session??null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e,s)=> setSession(s));
-    return <Dashboard profile={profile}/>;
-}
+  useEffect(() => {
+    // 1. Check for the current session on initial load
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
 
+    // 2. Listen for authentication state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    // 3. Return the cleanup function
+    // This will run when the component unmounts, preventing memory leaks
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []); // The empty dependency array means this effect runs only once on mount
+
+  // ... (You'll likely add profile fetching logic here later)
+
+  return { session, profile, err };
+}
 // --------- Root App + Dashboard Shell ---------
 export default function App(){
   const { session, profile, err } = useSessionProfile();
