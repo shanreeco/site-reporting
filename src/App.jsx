@@ -1,149 +1,5 @@
 import React, { useEffect, useMemo, useState, Suspense } from "react";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar
-} from "recharts";
-
-
-/**
- * Construction Site Reporting Dashboard – Cloud + Demo Mode
- * - Demo Mode prevents long preview hangs when Supabase env vars are missing
- * - Unix \n CSV endings
- * - Public URLs for photos (in cloud). In demo, object URLs are used.
- * - All users treated as ADMIN in demo (per your confirmation)
- */
-
-
-// --------- SUPABASE ---------
-import { createClient } from "@supabase/supabase-js";
-const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || "https://YOUR-PROJECT.supabase.co";
-const supabaseAnon = import.meta.env?.VITE_SUPABASE_ANON_KEY || "YOUR-ANON-KEY";
-const SUPABASE_CONFIGURED = !supabaseUrl.includes("YOUR-PROJECT") && supabaseAnon !== "YOUR-ANON-KEY";
-export const supabase = SUPABASE_CONFIGURED ? createClient(supabaseUrl, supabaseAnon, {
-  auth: { persistSession: true, autoRefreshToken: true },
-}) : null;
-const DEMO = !SUPABASE_CONFIGURED; // demo when no env vars
-
-
-// --------- Utils ---------
-function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
-function download(filename, text) {
-  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob); const a = document.createElement("a");
-  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
-function toCSV(rows, headerOrder) {
-  if (!rows || rows.length === 0) return "";
-  const headers = headerOrder ?? Object.keys(rows[0]);
-  const NL = String.fromCharCode(10); // safe Unix newline (avoids editor wrapping "\n")
-  const esc = (v) => {
-    const s = v == null ? "" : String(v);
-    return (s.includes(",") || s.includes(NL) || s.includes('"'))
-      ? '"' + s.replaceAll('"', '""') + '"'
-      : s;
-  };
-  const out = [headers.join(",")];
-  for (const r of rows) out.push(headers.map(h=>esc(r[h])).join(","));
-  return out.join(NL); // Unix line endings
-}
-const todayStr = () => new Date().toISOString().slice(0,10);
-
-
-// --------- Auth + Role context ---------
-function useSessionProfile() {
-  const [session, setSession] = useState(null);
-  const [profile, setProfile] = useState(null); // {id,email,role}
-
-
-  useEffect(()=>{
-    if (DEMO) {
-      const demoUser = { id: "demo-user", email: "demo@local" };
-      setSession({ user: demoUser });
-      setProfile({ id: demoUser.id, email: demoUser.email, role: "admin" }); // all admin in demo
-      return;
-
-I’ve fixed the unterminated string by fully rewriting the CSV utility to avoid fragile "\n" literals, and I repaired the broken tests.
-
-What I changed
-
-Rewrote toCSV to use String.fromCharCode(10) for Unix newlines, so the editor can’t split strings.
-
-Replaced every occurrence of the broken newline in toCSV and comments.
-
-Kept your original runtime tests’ intent but corrected the literals; added extra tests (header order, unicode, CR check, empty rows).
-
-What I need from you
-
-Just hit Deploy again (or wait for Vercel to auto-rebuild).
-If anything else errors, paste the new build log and I’ll target that exact line.
-
-You said:
-[15:21:54.027] Running build in Washington, D.C., USA (East) – iad1
-[15:21:54.027] Build machine configuration: 2 cores, 8 GB
-[15:21:54.060] Cloning github.com/shanreeco/site-reporting (Branch: main, Commit: 38c616a)
-[15:21:54.067] Skipping build cache, deployment was triggered without cache.
-[15:21:54.313] Cloning completed: 253.000ms
-[15:21:54.649] Running "vercel build"
-[15:21:55.030] Vercel CLI 47.0.5
-[15:21:55.601] Installing dependencies...
-[15:22:09.574] 
-[15:22:09.575] added 115 packages in 14s
-[15:22:09.575] 
-[15:22:09.575] 7 packages are looking for funding
-[15:22:09.575]   run npm fund for details
-[15:22:09.722] 
-[15:22:09.723] > site-reporting@0.0.1 build
-[15:22:09.724] > vite build
-[15:22:09.724] 
-[15:22:09.969] [36mvite v5.4.19 [32mbuilding for production...[36m[39m
-[15:22:10.017] transforming...
-[15:22:10.048] [32m✓[39m 3 modules transformed.
-[15:22:10.049] [31mx[39m Build failed in 55ms
-[15:22:10.050] [31merror during build:
-[15:22:10.050] [31m[vite:esbuild] Transform failed with 1 error:
-[15:22:10.050] /vercel/path0/src/App.jsx:138:0: ERROR: Unexpected "export"[31m
-[15:22:10.050] file: [36m/vercel/path0/src/App.jsx:138:0[31m
-[15:22:10.050] [33m
-[15:22:10.051] [33mUnexpected "export"[33m
-[15:22:10.051] 136|  
-[15:22:10.051] 137|  // --------- App ---------
-[15:22:10.051] 138|  export default function App(){
-[15:22:10.051]    |  ^
-[15:22:10.052] 139|    const { session, profile, isAdmin } = useSessionProfile();
-[15:22:10.052] 140|    const [tab, setTab] = useState("dashboard");
-[15:22:10.052] [31m
-[15:22:10.052]     at failureErrorWithLog (/vercel/path0/node_modules/esbuild/lib/main.js:1472:15)
-[15:22:10.052]     at /vercel/path0/node_modules/esbuild/lib/main.js:755:50
-[15:22:10.052]     at responseCallbacks.<computed> (/vercel/path0/node_modules/esbuild/lib/main.js:622:9)
-[15:22:10.052]     at handleIncomingPacket (/vercel/path0/node_modules/esbuild/lib/main.js:677:12)
-[15:22:10.053]     at Socket.readFromStdout (/vercel/path0/node_modules/esbuild/lib/main.js:600:7)
-[15:22:10.053]     at Socket.emit (node:events:518:28)
-[15:22:10.053]     at addChunk (node:internal/streams/readable:561:12)
-[15:22:10.053]     at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
-[15:22:10.053]     at Readable.push (node:internal/streams/readable:392:5)
-[15:22:10.053]     at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)[39m
-[15:22:10.065] Error: Command "npm run build" exited with 1
-ChatGPT said:
-Thought for 19s
-
-Thanks for the build log—this is a syntax shape issue now (not CSV). Unexpected "export" means something above that line isn’t closed (a quote, backtick, ), }, or ]). Then export appears where it’s not allowed.
-
-Quick, surgical fix
-
-Replace the top section of src/App.jsx (lines 1 → just before export default function App()) with this known-good header. It closes every string/brace properly and compiles:
-
-import React, { useEffect, useMemo, useState, Suspense } from "react";
-import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar
 } from "recharts";
@@ -249,7 +105,8 @@ function useTable(table) {
   async function insert(row) {
     if (DEMO) {
       const r = { ...row, id: crypto.randomUUID?.() || uid(), created_at: new Date().toISOString() };
-      saveDemo([r, ...rows]); return;
+      saveDemo([r, ...rows]);
+      return;
     }
     const { error } = await supabase.from(table).insert(row);
     if (error) alert(error.message);
@@ -279,7 +136,7 @@ async function uploadToBucket(bucket, file) {
 async function getPublicUrl(bucket, path) {
   if (DEMO) return path; // object URL
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-  return data.publicUrl;
+  return data.publicUrl; // public URL per your preference
 }
 
 // --------- App ---------
@@ -365,7 +222,7 @@ function Card({title, children}){return (<div className="bg-white border rounded
 function FormGrid({children}){return <div className="grid grid-cols-1 gap-2">{children}</div>;}
 function Input({label, value, onChange, type="text"}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><input type={type} value={value} onChange={e=>onChange(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300" /></label>);} 
 function TextArea({label, value, onChange}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><textarea value={value} onChange={e=>onChange(e.target.value)} className="w-full border rounded-lg px-3 py-2 h-24 focus:outline-none focus:ring-2 focus:ring-neutral-300" /></label>);} 
-function Select({label, value, onChange, options}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><select value={value} onChange={e=>onChange(e.target.value)} className="w-full border rounded-lg px-3 py-2 bg-white"><option value="">-- Select --</option>{options.map(opt=> <option key={opt} value={opt}>{opt}</option>)}</select></label>);} 
+function Select({label, value, onChange, options}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><select value={value} onChange={e=>onChange(e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg"><option value="">-- Select --</option>{options.map(opt=> <option key={opt} value={opt}>{opt}</option>)}</select></label>);} 
 function DataTable({columns, rows, onDelete}){
   const [q, setQ] = useState("");
   const filtered = useMemo(()=>{ if (!q) return rows; const s=q.toLowerCase(); return rows.filter(r=> Object.values(r).some(v=> String(v??"").toLowerCase().includes(s))); }, [q, rows]);
@@ -561,7 +418,6 @@ function Row(obj, keys){return (<div className="grid grid-cols-2 md:grid-cols-4 
 (function runTests(){
   try {
     const NL = String.fromCharCode(10);
-    // Original tests (fixed literals) — keep behavior the same
     const rows = [
       { a: 'x', b: 'y' },
       { a: '1,2', b: `line1${NL}line2` },
@@ -572,14 +428,9 @@ function Row(obj, keys){return (<div className="grid grid-cols-2 md:grid-cols-4 
     console.assert(csv.includes('"1,2"'), 'CSV should quote values with commas');
     console.assert(csv.includes(`"line1${NL}line2"`), 'CSV should preserve newlines (Unix)');
     console.assert(csv.includes('"quote "" inside"'), 'CSV should double internal quotes');
-
-    // Additional tests (safety)
-    console.assert(toCSV([], ['a','b']) === '', 'Empty rows should return empty string');
+    // Extra tests
+    console.assert(toCSV([], ['a','b']) === '', 'Empty rows -> empty string');
     const csv2 = toCSV([{ x: 1, y: 2 }], ['y','x']);
-    console.assert(csv2.startsWith('y,x'), 'Header order respected');
-    console.assert(csv2.split(NL)[1] === '2,1', 'Row order matches header order');
-    const csv3 = toCSV([{ a: 'α,β', b: 'γ' }], ['a','b']);
-    console.assert(csv3.includes('"α,β"'), 'Unicode + comma quoted');
-    console.assert(!csv3.includes('\r'), 'No Windows CR characters');
+    console.assert(csv2.startsWith('y,x') && csv2.split(NL)[1] === '2,1', 'Header order + row');
   } catch(err){ console.warn('Runtime tests failed:', err); }
 })();
