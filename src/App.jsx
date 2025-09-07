@@ -88,25 +88,45 @@ function download(filename, text){
   a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 
-// Generic loader for tables (RLS will scope to user; admin sees all via policy)
-function useTable(table){
-  const [rows,setRows]=React.useState([]); const [loading,setLoading]=React.useState(true); const [error,setError]=React.useState(\"\");
-  async function fetchAll(){
-    setLoading(true);
-    const { data, error } = await supabase.from(table).select('*').order('created_at',{ascending:false});
-    setRows(data||[]); setError(error?.message||\"\"); setLoading(false);
-  }
-  React.useEffect(()=>{ fetchAll(); const ch = supabase.channel(`${table}-changes`).on('postgres_changes',{event:'*',schema:'public',table}, fetchAll).subscribe(); return ()=> supabase.removeChannel(ch); },[]);
-  async function insert(row){ const user = (await supabase.auth.getUser()).data.user; const { error } = await supabase.from(table).insert({ ...row, user_id: user.id }); if (error) alert(error.message); }
-  async function remove(id){ const { error } = await supabase.from(table).delete().eq('id', id); if (error) alert(error.message); }
-  async function clearAll(){ if (!confirm('Delete ALL records?')) return; const { error } = await supabase.from(table).delete().neq('id','00000000-0000-0000-0000-000000000000'); if (error) alert(error.message); }
-  return { rows, loading, error, insert, remove, clearAll };
-}
+// CORRECTED CODE
 
-async function uploadToBucket(bucket, file){
-  const ext = file.name.split('.').pop(); const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-  const { data, error } = await supabase.storage.from(bucket).upload(path, file, { upsert:false });
-  if (error) throw error; const { data:pub } = await supabase.storage.from(bucket).getPublicUrl(data.path); return pub.publicUrl;
+function useTable(table) {
+  const [rows, setRows] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(""); // <-- FIXED
+
+  async function fetchAll() {
+    setLoading(true);
+    const { data, error } = await supabase.from(table).select('*').order('created_at', { ascending: false });
+    setRows(data || []);
+    setError(error?.message || ""); // <-- FIXED
+    setLoading(false);
+  }
+
+  React.useEffect(() => {
+    fetchAll();
+    const ch = supabase.channel(`${table}-changes`).on('postgres_changes', { event: '*', schema: 'public', table }, fetchAll).subscribe();
+    return () => supabase.removeChannel(ch);
+  }, []);
+
+  async function insert(row) {
+    const user = (await supabase.auth.getUser()).data.user;
+    const { error } = await supabase.from(table).insert({ ...row, user_id: user.id });
+    if (error) alert(error.message);
+  }
+
+  async function remove(id) {
+    const { error } = await supabase.from(table).delete().eq('id', id);
+    if (error) alert(error.message);
+  }
+
+  async function clearAll() {
+    if (!confirm('Delete ALL records?')) return;
+    const { error } = await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error) alert(error.message);
+  }
+  
+  return { rows, loading, error, insert, remove, clearAll };
 }
 
 // ========= Reusable UI =========
