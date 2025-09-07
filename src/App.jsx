@@ -17,8 +17,7 @@ import {
 /**
  * Construction Site Reporting Dashboard – Cloud + Demo Mode
  * - Demo Mode prevents long preview hangs when Supabase env vars are missing
- * - Unix 
- CSV endings
+ * - Unix \n CSV endings
  * - Public URLs for photos (in cloud). In demo, object URLs are used.
  * - All users treated as ADMIN in demo (per your confirmation)
  */
@@ -39,10 +38,11 @@ function download(filename, text) {
   const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob); const a = document.createElement("a");
   a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
 function toCSV(rows, headerOrder) {
   if (!rows || rows.length === 0) return "";
   const headers = headerOrder ?? Object.keys(rows[0]);
-  const NL = String.fromCharCode(10); // safe newline
+  const NL = String.fromCharCode(10); // safe Unix newline (avoids editor wrapping "\n")
   const esc = (v) => {
     const s = v == null ? "" : String(v);
     return (s.includes(",") || s.includes(NL) || s.includes('"'))
@@ -50,8 +50,8 @@ function toCSV(rows, headerOrder) {
       : s;
   };
   const out = [headers.join(",")];
-  for (const r of rows) out.push(headers.map(h => esc(r[h])).join(","));
-  return out.join(NL); // Unix newline
+  for (const r of rows) out.push(headers.map(h=>esc(r[h])).join(","));
+  return out.join(NL); // Unix line endings
 }
 const todayStr = () => new Date().toISOString().slice(0,10);
 
@@ -162,7 +162,7 @@ export default function App(){
 
       <div className="max-w-7xl mx-auto px-4 pt-4">
         <nav className="flex gap-2 flex-wrap">
-          {[["dashboard","Dashboard"],["concrete","Concrete Casting Log"],["manpower","Daily Manpower Log"],["issues","Daily Issue Log"],["materials","Material Req/Delivery Log"],["report","Printable Report"]].map(([k,l])=> (
+          {[['dashboard','Dashboard'],['concrete','Concrete Casting Log'],['manpower','Daily Manpower Log'],['issues','Daily Issue Log'],['materials','Material Req/Delivery Log'],['report','Printable Report']].map(([k,l])=> (
             <button key={k} onClick={()=>setTab(k)} className={`px-3 py-1.5 rounded-full border ${tab===k?"bg-neutral-900 text-white":"bg-white hover:bg-neutral-100"}`}>{l}</button>
           ))}
         </nav>
@@ -412,18 +412,26 @@ function Row(obj, keys){return (<div className="grid grid-cols-2 md:grid-cols-4 
 // ---------- Minimal runtime tests ----------
 (function runTests(){
   try {
+    const NL = String.fromCharCode(10);
+    // Original tests (fixed literals) — keep behavior the same
     const rows = [
       { a: 'x', b: 'y' },
-      { a: '1,2', b: 'line1
-line2' },
+      { a: '1,2', b: `line1${NL}line2` },
       { a: 'quote " inside', b: '' }
     ];
     const csv = toCSV(rows, ['a','b']);
-    console.assert(csv.split('
-').length === 4, 'CSV should have header + 3 lines');
+    console.assert(csv.split(NL).length === 4, 'CSV should have header + 3 lines');
     console.assert(csv.includes('"1,2"'), 'CSV should quote values with commas');
-    console.assert(csv.includes('"line1
-line2"'), 'CSV should preserve newlines (Unix)');
+    console.assert(csv.includes(`"line1${NL}line2"`), 'CSV should preserve newlines (Unix)');
     console.assert(csv.includes('"quote "" inside"'), 'CSV should double internal quotes');
+
+    // Additional tests (safety)
+    console.assert(toCSV([], ['a','b']) === '', 'Empty rows should return empty string');
+    const csv2 = toCSV([{ x: 1, y: 2 }], ['y','x']);
+    console.assert(csv2.startsWith('y,x'), 'Header order respected');
+    console.assert(csv2.split(NL)[1] === '2,1', 'Row order matches header order');
+    const csv3 = toCSV([{ a: 'α,β', b: 'γ' }], ['a','b']);
+    console.assert(csv3.includes('"α,β"'), 'Unicode + comma quoted');
+    console.assert(!csv3.includes('\r'), 'No Windows CR characters');
   } catch(err){ console.warn('Runtime tests failed:', err); }
 })();
