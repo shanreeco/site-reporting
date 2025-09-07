@@ -12,34 +12,42 @@ const MISCONFIGURED = supabaseUrl.includes("YOUR-PROJECT") || supabaseAnon === "
 // --------- Session / Profile ---------
 function useSessionProfile(){
   const [session,setSession]=useState(null);
-  const [profile,setProfile]=useState(undefined); // undefined = loading, null = not found yet
+  const [profile,setProfile]=useState(undefined);
   const [err,setErr]=useState("");
+
   useEffect(()=>{
     supabase.auth.getSession().then(({data})=> setSession(data.session??null));
     const { data: sub } = supabase.auth.onAuthStateChange((_e,s)=> setSession(s));
     return ()=> sub?.subscription?.unsubscribe();
   },[]);
+
   useEffect(()=>{
     (async()=>{
       setErr("");
       if (!session?.user) { setProfile(null); return; }
-      const { data, error } = await supabase
-        .from('profiles').select('id,email,role')
-        .eq('id', session.user.id).maybeSingle();
-      if (error) { setErr(error.message); setProfile(null); return; }
-      if (data) { setProfile(data); return; }
-      // If profile row is missing, create with default server-side role 'supervisor'
-      const { error: insErr } = await supabase
-        .from('profiles')
-        .insert({ id: session.user.id, email: session.user.email });
-      if (insErr) { setErr(insErr.message); setProfile(null); return; }
-      const { data: d2, error: e2 } = await supabase
-        .from('profiles').select('id,email,role')
-        .eq('id', session.user.id).maybeSingle();
-      if (e2) { setErr(e2.message); setProfile(null); return; }
-      setProfile(d2 || { id: session.user.id, email: session.user.email, role: 'supervisor' });
+      try {
+        let { data, error } = await supabase
+          .from('profiles').select('id,email,role')
+          .eq('id', session.user.id).maybeSingle();
+        if (error) throw error;
+        if (!data) {
+          const { error: insErr } = await supabase
+            .from('profiles')
+            .insert({ id: session.user.id, email: session.user.email });
+          if (insErr) throw insErr;
+          ({ data, error } = await supabase
+            .from('profiles').select('id,email,role')
+            .eq('id', session.user.id).maybeSingle());
+          if (error) throw error;
+        }
+        setProfile(data || { id: session.user.id, email: session.user.email, role: 'supervisor' });
+      } catch(e){
+        setErr(e.message);
+        setProfile(null);
+      }
     })();
   },[session?.user?.id]);
+
   return { session, profile, isAdmin: profile?.role==='admin', err };
 }
 
@@ -53,13 +61,15 @@ function AuthPage(){
   const handleAuth = async()=>{
     setMsg("");
     if (!email || !password) { setMsg('Email and password are required.'); return; }
-    if (signup) {
-      const { error } = await supabase.auth.signUp({ email, password, options:{ emailRedirectTo: window.location.origin } });
-      setMsg(error ? error.message : 'Check your email to confirm sign-up.');
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      setMsg(error ? error.message : '');
-    }
+    try {
+      if (signup) {
+        const { error } = await supabase.auth.signUp({ email, password, options:{ emailRedirectTo: window.location.origin } });
+        setMsg(error ? error.message : 'Check your email to confirm sign-up.');
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        setMsg(error ? error.message : '');
+      }
+    } catch(e){ setMsg(e.message); }
   };
 
   return (
@@ -107,8 +117,8 @@ function ErrorBox({title="Error", message=""}){
 
 export default function App(){
   const { session, profile, err } = useSessionProfile();
-  // Global runtime error capture to avoid blank screen
   const [fatal, setFatal] = useState("");
+
   useEffect(()=>{
     const onErr = (e)=> setFatal(e?.error?.stack || e?.message || String(e));
     const onRej = (e)=> setFatal(e?.reason?.stack || e?.reason?.message || String(e.reason ?? e));
@@ -116,16 +126,17 @@ export default function App(){
     window.addEventListener('unhandledrejection', onRej);
     return ()=>{ window.removeEventListener('error', onErr); window.removeEventListener('unhandledrejection', onRej); };
   },[]);
-  if (fatal) return <ErrorBox title="Runtime error" message={fatal} />;
 
+  if (fatal) return <ErrorBox title="Runtime error" message={fatal} />;
   if (!session) return <AuthPage/>;
   if (profile === undefined) return <div className="min-h-screen grid place-items-center">Loading profile…</div>;
   if (err) return <ErrorBox title="Supabase error" message={err} />;
 
   return (
     <div className="min-h-screen bg-neutral-50 p-6">
-      <h1 className="text-xl font-semibold mb-4">Welcome {profile.email} ({profile.role})</h1>
+      <h1 className="text-xl font-semibold mb-4">Welcome {profile?.email || "(no email)"} ({profile?.role || "?"})</h1>
       <button onClick={()=>supabase.auth.signOut()} className="px-3 py-2 border rounded">Sign out</button>
+      <pre className="mt-4 p-2 bg-white border rounded text-xs">{JSON.stringify(profile,null,2)}</pre>
     </div>
   );
 }
