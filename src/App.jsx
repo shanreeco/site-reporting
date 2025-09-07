@@ -2,12 +2,12 @@ import React, { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 // --------- SUPABASE ---------
-const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || "https://xbgmqgxhhhrslduocicv.supabase.co";
-const supabaseAnon = import.meta.env?.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiZ21xZ3hoaGhyc2xkdW9jaWN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwMzY1NTIsImV4cCI6MjA3MjYxMjU1Mn0.ca9_TrUk12-EcJpEZIgehEQ-qfyc0B5GL6jJljly5uc";
+const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || "https://YOUR-PROJECT.supabase.co";
+const supabaseAnon = import.meta.env?.VITE_SUPABASE_ANON_KEY || "YOUR-ANON-KEY";
 export const supabase = createClient(supabaseUrl, supabaseAnon, {
   auth: { persistSession: true, autoRefreshToken: true },
 });
-const MISCONFIGURED = supabaseUrl.includes("xbgmqgxhhhrslduocicv") || supabaseAnon === "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiZ21xZ3hoaGhyc2xkdW9jaWN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwMzY1NTIsImV4cCI6MjA3MjYxMjU1Mn0.ca9_TrUk12-EcJpEZIgehEQ-qfyc0B5GL6jJljly5uc";
+const MISCONFIGURED = supabaseUrl.includes("YOUR-PROJECT") || supabaseAnon === "YOUR-ANON-KEY";
 
 // --------- Session / Profile ---------
 function useSessionProfile(){
