@@ -1,7 +1,2 @@
-diff --git a//dev/null b/.gitignore
-index 0000000000000000000000000000000000000000..b9470778764f72c5257a3361590d2994547f90e1 100644
---- a//dev/null
-+++ b/.gitignore
-@@ -0,0 +1,2 @@
 +node_modules/
 +dist/
