@@ -71,7 +71,8 @@ function AuthPage(){
   const [password,setPassword] = useState("");
   const [signup,setSignup] = useState(false);
   const [msg,setMsg] = useState("");
-
+  const [showPass, setShowPass] = useState(false);
+  
   const handleAuth = async()=>{
     setMsg("");
     if (!email || !password) { setMsg('Email and password are required.'); return; }
