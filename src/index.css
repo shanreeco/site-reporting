@@ -1,0 +1,8 @@
+diff --git a//dev/null b/src/index.css
+index 0000000000000000000000000000000000000000..b5c61c956711f981a41e95f7fcf0038436cfbb22 100644
+--- a//dev/null
++++ b/src/index.css
+@@ -0,0 +1,3 @@
++@tailwind base;
++@tailwind components;
++@tailwind utilities;
