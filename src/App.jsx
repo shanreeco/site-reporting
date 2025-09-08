@@ -112,8 +112,8 @@ export default function App(){
 }
 
 // ========= Utilities =========
-const NL = '
-';
+// newline character used in CSV
+const NL = '\n';
 function toCSV(rows, headerOrder){
   if (!rows || rows.length===0) return "";
   const headers = headerOrder ?? Object.keys(rows[0]);
