@@ -1,6 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+} from "recharts";
 // --------- SUPABASE ---------
 const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || "https://YOUR-PROJECT.supabase.co";
 const supabaseAnon = import.meta.env?.VITE_SUPABASE_ANON_KEY || "YOUR-ANON-KEY";
@@ -229,13 +243,90 @@ function Dashboard({profile}){
       </header>
 
       <main className="p-6 grid gap-4 max-w-7xl mx-auto">
-        {tab==='dashboard' && <Card title="Welcome"><p className="text-sm text-neutral-600">Use the tabs to add data. CSV export shows only for admins.</p></Card>}
+        {tab==='dashboard' && <DashboardTab />}
         {tab==='concrete' && <ConcreteLog isAdmin={isAdmin} />}
         {tab==='manpower' && <ManpowerLog isAdmin={isAdmin} />}
         {tab==='issues' && <IssuesLog isAdmin={isAdmin} />}
         {tab==='materials' && <MaterialsLog isAdmin={isAdmin} />}
       </main>
     </div>
+  );
+}
+
+function DashboardTab(){
+  const { rows: concreteRows } = useTable('concrete');
+  const { rows: manpowerRows } = useTable('manpower');
+  const { rows: materialRows } = useTable('materials');
+
+  const concreteData = React.useMemo(()=>{
+    const byDate = {};
+    for(const r of concreteRows){
+      const d = r.date || '';
+      const v = parseFloat(r.volume) || 0;
+      byDate[d] = (byDate[d]||0) + v;
+    }
+    return Object.entries(byDate).map(([date, volume])=>({ date, volume }));
+  },[concreteRows]);
+
+  const manpowerData = React.useMemo(()=>{
+    const byDate = {};
+    for(const r of manpowerRows){
+      const d = r.date || '';
+      const w = parseFloat(r.workers) || 0;
+      byDate[d] = (byDate[d]||0) + w;
+    }
+    return Object.entries(byDate).map(([date, workers])=>({ date, workers }));
+  },[manpowerRows]);
+
+  const materialData = React.useMemo(()=>{
+    const byStatus = {};
+    for(const r of materialRows){
+      const s = r.status || 'Unknown';
+      byStatus[s] = (byStatus[s]||0) + 1;
+    }
+    return Object.entries(byStatus).map(([name, value])=>({ name, value }));
+  },[materialRows]);
+
+  const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#8dd1e1'];
+
+  return (
+    <section className="grid md:grid-cols-3 gap-4">
+      <Card title="Concrete Volume">
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={concreteData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="volume" fill="#8884d8" />
+          </BarChart>
+        </ResponsiveContainer>
+      </Card>
+      <Card title="Manpower">
+        <ResponsiveContainer width="100%" height={250}>
+          <LineChart data={manpowerData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Line type="monotone" dataKey="workers" stroke="#82ca9d" />
+          </LineChart>
+        </ResponsiveContainer>
+      </Card>
+      <Card title="Material Orders">
+        <ResponsiveContainer width="100%" height={250}>
+          <PieChart>
+            <Pie data={materialData} dataKey="value" nameKey="name" outerRadius={80} label>
+              {materialData.map((entry, index)=>(
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      </Card>
+    </section>
   );
 }
 
