@@ -42,7 +42,8 @@ function useSessionProfile(){
             .eq('id', session.user.id).maybeSingle());
           if (error) throw error;
         }
-        setProfile(data || { id: session.user.id, email: session.user.email, role: 'supervisor' });
+             if (!data) { setErr('Profile not found'); setProfile(null); return; }
+        setProfile(data);
       } catch(e){ setErr(e.message || String(e)); setProfile(null); }
     })();
   },[session?.user?.id]);
@@ -107,7 +108,14 @@ export default function App(){
   if (!session) return <AuthPage/>;
   if (profile === undefined) return <div className="min-h-screen grid place-items-center">Loading profile…</div>;
   if (err) return <div className="min-h-screen grid place-items-center text-red-700">{err}</div>;
-
+  if (profile === null) return (
+    <div className="min-h-screen grid place-items-center text-red-700">
+      <div className="text-center">
+        <p>Profile not found.</p>
+        <button onClick={()=>supabase.auth.signOut()} className="underline mt-2">Sign out</button>
+      </div>
+    </div>
+  );
   return <Dashboard profile={profile}/>;
 }
 
