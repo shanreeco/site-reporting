@@ -200,7 +200,7 @@ function TextArea({label, value, onChange}){return (<label className="text-sm"><
 function Select({label, value, onChange, options}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><select value={value||""} onChange={e=>onChange(e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg"><option value="">-- Select --</option>{options.map(opt=> <option key={opt} value={opt}>{opt}</option>)}</select></label>);} 
 function DataTable({columns, rows, onDelete}){
   return (
-    <div className="overflow-auto border rounded-xl">
+    <div className="overflow-x-auto border rounded-xl">
       <table className="min-w-full text-sm">
         <thead className="bg-neutral-50">
           <tr>
