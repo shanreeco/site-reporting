@@ -229,7 +229,7 @@ function Dashboard({profile}){
   return (
     <div className="min-h-screen bg-neutral-50">
       <header className="px-6 pt-6 border-b bg-white/70 backdrop-blur">
-        <div className="flex items-center gap-3 max-w-7xl mx-auto">
+        <div className="flex flex-wrap items-center gap-3 max-w-7xl mx-auto">
           <h1 className="text-xl font-semibold">Construction Site Reporting</h1>
           <span className="text-xs text-neutral-600 px-2 py-1 rounded-full border">{profile.email} · {profile.role}</span>
           <div className="ml-auto"><button onClick={()=>supabase.auth.signOut()} className="px-3 py-2 border rounded">Sign out</button></div>
@@ -440,7 +440,7 @@ function MaterialsLog({isAdmin}){
         <Select label="Type" value={d.type} onChange={v=>setD({...d,type:v})} options={["Request","Delivery"]} />
         <Input label="Item" value={d.item} onChange={v=>setD({...d,item:v})} />
         <Input label="Specification" value={d.spec} onChange={v=>setD({...d,spec:v})} />
-        <div className="grid grid-cols-2 gap-2"><Input label="Qty" value={d.qty} onChange={v=>setD({...d,qty:v})} /><Input label="Unit" value={d.unit} onChange={v=>setD({...d,unit:v})} /></div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2"><Input label="Qty" value={d.qty} onChange={v=>setD({...d,qty:v})} /><Input label="Unit" value={d.unit} onChange={v=>setD({...d,unit:v})} /></div>
         <Input label="Needed By" type="date" value={d.needed_by} onChange={v=>setD({...d,needed_by:v})} />
         <Input label="Supplier" value={d.supplier} onChange={v=>setD({...d,supplier:v})} />
         <Input label="PO / Ref" value={d.po} onChange={v=>setD({...d,po:v})} />
