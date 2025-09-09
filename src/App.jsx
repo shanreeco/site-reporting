@@ -338,7 +338,7 @@ function ConcreteLog({isAdmin}){
   const add = async()=>{ if(!d.date||!d.location||!d.element) return alert('Date, Location, Element required'); await insert(d); setD({ date:'', pour_id:'', location:'', element:'', volume:'', mix:'', supplier:'', start_time:'', end_time:'', cubes:'', supervisor:'', notes:'' }); };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes","created_at"]; download(`concrete_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
-    <section className="grid md:grid-cols-3 gap-4">
+    <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div><Card title="Add Concrete"><FormGrid>
         <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
         <Input label="Pour ID / Ref" value={d.pour_id} onChange={v=>setD({...d,pour_id:v})} />
@@ -358,7 +358,7 @@ function ConcreteLog({isAdmin}){
         {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
         {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
       </div></Card></div>
-      <div className="md:col-span-2"><Card title={`Records (${rows.length})`}><DataTable columns={["date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes"]} rows={rows} onDelete={remove} /></Card></div>
+      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes"]} rows={rows} onDelete={remove} /></Card></div>
     </section>
   );
 }
@@ -369,7 +369,7 @@ function ManpowerLog({isAdmin}){
   const add = async()=>{ if(!d.date||!d.contractor||!d.trade) return alert('Date, Contractor, Trade required'); await insert(d); setD({ date:'', contractor:'', trade:'', workers:'', hours:'', zone:'', supervisor:'', notes:'' }); };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","contractor","trade","workers","hours","zone","supervisor","notes","created_at"]; download(`manpower_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
-    <section className="grid md:grid-cols-3 gap-4">
+    <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div><Card title="Add Manpower"><FormGrid>
         <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
         <Input label="Contractor" value={d.contractor} onChange={v=>setD({...d,contractor:v})} />
@@ -385,7 +385,7 @@ function ManpowerLog({isAdmin}){
         {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
         {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
       </div></Card></div>
-      <div className="md:col-span-2"><Card title={`Records (${rows.length})`}><DataTable columns={["date","contractor","trade","workers","hours","zone","supervisor","notes"]} rows={rows} onDelete={remove} /></Card></div>
+      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","contractor","trade","workers","hours","zone","supervisor","notes"]} rows={rows} onDelete={remove} /></Card></div>
     </section>
   );
 }
@@ -418,7 +418,7 @@ function IssuesLog({isAdmin}){
         {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
         {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
       </div></Card></div>
-      <div className="md:col-span-2"><Card title={`Records (${rows.length})`}><DataTable columns={["date","location","description","severity","status","raised_by","owner","due_by","photo_url"]} rows={rows} onDelete={remove} /></Card></div>
+      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","location","description","severity","status","raised_by","owner","due_by","photo_url"]} rows={rows} onDelete={remove} /></Card></div>
     </section>
   );
 }
@@ -434,7 +434,7 @@ function MaterialsLog({isAdmin}){
   };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url","created_at"]; download(`materials_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
-    <section className="grid md:grid-cols-3 gap-4">
+    <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div><Card title="Add Material Record"><FormGrid>
         <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
         <Select label="Type" value={d.type} onChange={v=>setD({...d,type:v})} options={["Request","Delivery"]} />
@@ -454,7 +454,7 @@ function MaterialsLog({isAdmin}){
         {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
         {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
       </div></Card></div>
-      <div className="md:col-span-2"><Card title={`Records (${rows.length})`}><DataTable columns={["date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url"]} rows={rows} onDelete={remove} /></Card></div>
+      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url"]} rows={rows} onDelete={remove} /></Card></div>
     </section>
   );
 }
