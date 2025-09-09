@@ -174,16 +174,16 @@ function download(filename, text){
 // Generic loader for tables (RLS will scope to user; admin sees all via policy)
 function useTable(table){
   const [rows,setRows]=React.useState([]); const [loading,setLoading]=React.useState(true); const [error,setError]=React.useState("");
-  async function fetchAll(){
+  async function refresh(){
     setLoading(true);
     const { data, error } = await supabase.from(table).select('*').order('created_at',{ascending:false});
     setRows(data||[]); setError(error?.message||""); setLoading(false);
   }
-  React.useEffect(()=>{ fetchAll(); const ch = supabase.channel(`${table}-changes`).on('postgres_changes',{event:'*',schema:'public',table}, fetchAll).subscribe(); return ()=> supabase.removeChannel(ch); },[]);
+  React.useEffect(()=>{ refresh(); const ch = supabase.channel(`${table}-changes`).on('postgres_changes',{event:'*',schema:'public',table}, refresh).subscribe(); return ()=> supabase.removeChannel(ch); },[]);
   async function insert(row){ const user = (await supabase.auth.getUser()).data.user; const { error } = await supabase.from(table).insert({ ...row, user_id: user.id }); if (error) alert(error.message); }
   async function remove(id){ const { error } = await supabase.from(table).delete().eq('id', id); if (error) alert(error.message); }
   async function clearAll(){ if (!confirm('Delete ALL records?')) return; const { error } = await supabase.from(table).delete().neq('id','00000000-0000-0000-0000-000000000000'); if (error) alert(error.message); }
-  return { rows, loading, error, insert, remove, clearAll };
+  return { rows, loading, error, insert, remove, clearAll, refresh };
 }
 
 async function uploadToBucket(bucket, file){
@@ -212,23 +212,24 @@ function Input({label, value, onChange, type="text"}){
 function TextArea({label, value, onChange}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><textarea value={value||""} onChange={e=>onChange(e.target.value)} className="w-full border rounded-lg px-3 py-2 h-24" /></label>);} 
 function Select({label, value, onChange, options}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><select value={value||""} onChange={e=>onChange(e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg"><option value="">-- Select --</option>{options.map(opt=> <option key={opt} value={opt}>{opt}</option>)}</select></label>);} 
 function DataTable({columns, rows, onDelete}){
+    const showActions = typeof onDelete === 'function';
   return (
     <div className="overflow-x-auto border rounded-xl">
       <table className="min-w-full text-sm">
         <thead className="bg-neutral-50">
           <tr>
             {columns.map(c=> <th key={c} className="text-left px-3 py-2 border-b whitespace-nowrap capitalize">{c.replaceAll('_',' ')}</th>)}
-            <th className="px-3 py-2 border-b text-right">Actions</th>
+            {showActions && <th className="px-3 py-2 border-b text-right">Actions</th>}
           </tr>
         </thead>
         <tbody>
           {rows.map(r=> (
             <tr key={r.id} className="odd:bg-white even:bg-neutral-50">
               {columns.map(c=> (<td key={c} className="px-3 py-2 border-b align-top whitespace-pre-wrap">{String(r[c]??'')}</td>))}
-              <td className="px-3 py-2 border-b text-right"><button onClick={()=>onDelete(r.id)} className="text-red-600 hover:underline">Delete</button></td>
+              {showActions && <td className="px-3 py-2 border-b text-right"><button onClick={()=>onDelete(r.id)} className="text-red-600 hover:underline">Delete</button></td>}
             </tr>
           ))}
-          {rows.length===0 && <tr><td className="px-3 py-6 text-center text-neutral-500" colSpan={columns.length+1}>No data</td></tr>}
+          {rows.length===0 && <tr><td className="px-3 py-6 text-center text-neutral-500" colSpan={columns.length + (showActions?1:0)}>No data</td></tr>}
         </tbody>
       </table>
     </div>
@@ -346,7 +347,7 @@ function DashboardTab(){
 
 // ========= Sections =========
 function ConcreteLog({isAdmin}){
-  const { rows, insert, remove, clearAll } = useTable('concrete');
+  const { rows, insert, remove, clearAll, refresh } = useTable('concrete');
   const [d,setD]=React.useState({ date:'', pour_id:'', location:'', element:'', volume:'', mix:'', supplier:'', start_time:'', end_time:'', cubes:'', supervisor:'', notes:'' });
   const add = async()=>{ if(!d.date||!d.location||!d.element) return alert('Date, Location, Element required'); await insert(d); setD({ date:'', pour_id:'', location:'', element:'', volume:'', mix:'', supplier:'', start_time:'', end_time:'', cubes:'', supervisor:'', notes:'' }); };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes","created_at"]; download(`concrete_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
@@ -371,13 +372,13 @@ function ConcreteLog({isAdmin}){
         {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
         {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
       </div></Card></div>
-      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes"]} rows={rows} onDelete={remove} /></Card></div>
+      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes"]} rows={rows} onDelete={isAdmin ? remove : undefined} /></Card></div>
     </section>
   );
 }
 
 function ManpowerLog({isAdmin}){
-  const { rows, insert, remove, clearAll } = useTable('manpower');
+  const { rows, insert, remove, clearAll, refresh } = useTable('manpower');
   const [d,setD]=React.useState({ date:'', contractor:'', trade:'', workers:'', hours:'', zone:'', supervisor:'', notes:'' });
   const add = async()=>{ if(!d.date||!d.contractor||!d.trade) return alert('Date, Contractor, Trade required'); await insert(d); setD({ date:'', contractor:'', trade:'', workers:'', hours:'', zone:'', supervisor:'', notes:'' }); };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","contractor","trade","workers","hours","zone","supervisor","notes","created_at"]; download(`manpower_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
@@ -398,13 +399,13 @@ function ManpowerLog({isAdmin}){
         {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
         {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
       </div></Card></div>
-      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","contractor","trade","workers","hours","zone","supervisor","notes"]} rows={rows} onDelete={remove} /></Card></div>
+      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","contractor","trade","workers","hours","zone","supervisor","notes"]} rows={rows} onDelete={isAdmin ? remove : undefined} /></Card></div>
     </section>
   );
 }
 
 function IssuesLog({isAdmin}){
-  const { rows, insert, remove, clearAll } = useTable('issues');
+  const { rows, insert, remove, clearAll, refresh } = useTable('issues');
   const [d,setD]=React.useState({ date:'', location:'', description:'', severity:'', status:'Open', raised_by:'', owner:'', due_by:'', photo_url:'' });
   const [file,setFile]=React.useState(null);
   const add = async()=>{
@@ -431,13 +432,13 @@ function IssuesLog({isAdmin}){
         {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
         {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
       </div></Card></div>
-      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","location","description","severity","status","raised_by","owner","due_by","photo_url"]} rows={rows} onDelete={remove} /></Card></div>
+      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","location","description","severity","status","raised_by","owner","due_by","photo_url"]} rows={rows} onDelete={isAdmin ? remove : undefined} /></Card></div>
     </section>
   );
 }
 
 function MaterialsLog({isAdmin}){
-  const { rows, insert, remove, clearAll } = useTable('materials');
+  const { rows, insert, remove, clearAll, refresh } = useTable('materials');
   const [d,setD]=React.useState({ date:'', type:'Request', item:'', spec:'', qty:'', unit:'', needed_by:'', supplier:'', po:'', status:'Pending', location:'', requester:'', photo_url:'' });
   const [file,setFile]=React.useState(null);
   const add = async()=>{
@@ -467,7 +468,7 @@ function MaterialsLog({isAdmin}){
         {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
         {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
       </div></Card></div>
-      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url"]} rows={rows} onDelete={remove} /></Card></div>
+      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url"]} rows={rows} onDelete={isAdmin ? remove : undefined} /></Card></div>
     </section>
   );
 }
