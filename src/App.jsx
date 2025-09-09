@@ -209,6 +209,19 @@ function Input({label, value, onChange, type="text"}){
     </label>
   );
 }
+  const extra = ['date', 'time'].includes(type) ? 'appearance-none h-10' : '';
+  return (
+    <label className="text-sm">
+      <div className="text-xs text-neutral-500 mb-1">{label}</div>
+      <input
+        type={type}
+        value={value || ""}
+        onChange={e => onChange(e.target.value)}
+        className={`w-full border rounded-lg px-3 py-2 ${extra}`}
+      />
+    </label>
+  );
+}
 function TextArea({label, value, onChange}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><textarea value={value||""} onChange={e=>onChange(e.target.value)} className="w-full border rounded-lg px-3 py-2 h-24" /></label>);} 
 function Select({label, value, onChange, options}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><select value={value||""} onChange={e=>onChange(e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg"><option value="">-- Select --</option>{options.map(opt=> <option key={opt} value={opt}>{opt}</option>)}</select></label>);} 
 function DataTable({columns, rows, onDelete}){
