@@ -195,7 +195,20 @@ async function uploadToBucket(bucket, file){
 // ========= Reusable UI =========
 function Card({title, children}){return (<div className="bg-white border rounded-2xl p-4 shadow-sm">{title && <h3 className="text-lg font-semibold mb-3">{title}</h3>}{children}</div>);} 
 function FormGrid({children}){return <div className="grid grid-cols-1 gap-2">{children}</div>;}
-function Input({label, value, onChange, type="text"}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><input type={type} value={value||""} onChange={e=>onChange(e.target.value)} className="w-full border rounded-lg px-3 py-2" /></label>);} 
+function Input({label, value, onChange, type="text"}){
+  const extra = ['date', 'time'].includes(type) ? 'appearance-none h-10' : '';
+  return (
+    <label className="text-sm">
+      <div className="text-xs text-neutral-500 mb-1">{label}</div>
+      <input
+        type={type}
+        value={value || ""}
+        onChange={e => onChange(e.target.value)}
+        className={`w-full border rounded-lg px-3 py-2 ${extra}`}
+      />
+    </label>
+  );
+}
 function TextArea({label, value, onChange}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><textarea value={value||""} onChange={e=>onChange(e.target.value)} className="w-full border rounded-lg px-3 py-2 h-24" /></label>);} 
 function Select({label, value, onChange, options}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><select value={value||""} onChange={e=>onChange(e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg"><option value="">-- Select --</option>{options.map(opt=> <option key={opt} value={opt}>{opt}</option>)}</select></label>);} 
 function DataTable({columns, rows, onDelete}){
