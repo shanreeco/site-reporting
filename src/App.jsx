@@ -372,7 +372,25 @@ function ConcreteLog({isAdmin}){
         {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
         {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
       </div></Card></div>
-      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes"]} rows={rows} onDelete={isAdmin ? remove : undefined} /></Card></div>
+     <div className="md:col-span-2 min-w-0">
+        <Card title={`Records (${rows.length})`}>
+          <div className="mb-3 flex justify-end">
+            <button
+              onClick={refresh}
+              aria-label="Refresh"
+              className="p-2 border rounded-lg text-neutral-600 hover:bg-neutral-100"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" strokeWidth={1.5}
+                   className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round"
+                      d="M16.5 9.75V6.75l3.75 3.75L16.5 14.25v-3a6.75 6.75 0 10-6 6.68"/>
+              </svg>
+            </button>
+          </div>
+          <DataTable columns=["date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
+        </Card>
+      </div>
     </section>
   );
 }
@@ -399,7 +417,25 @@ function ManpowerLog({isAdmin}){
         {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
         {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
       </div></Card></div>
-      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","contractor","trade","workers","hours","zone","supervisor","notes"]} rows={rows} onDelete={isAdmin ? remove : undefined} /></Card></div>
+      <div className="md:col-span-2 min-w-0">
+        <Card title={`Records (${rows.length})`}>
+          <div className="mb-3 flex justify-end">
+            <button
+              onClick={refresh}
+              aria-label="Refresh"
+              className="p-2 border rounded-lg text-neutral-600 hover:bg-neutral-100"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" strokeWidth={1.5}
+                   className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round"
+                      d="M16.5 9.75V6.75l3.75 3.75L16.5 14.25v-3a6.75 6.75 0 10-6 6.68"/>
+              </svg>
+            </button>
+          </div>
+          <DataTable columns=["date","contractor","trade","workers","hours","zone","supervisor","notes"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
+        </Card>
+      </div>
     </section>
   );
 }
@@ -432,7 +468,25 @@ function IssuesLog({isAdmin}){
         {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
         {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
       </div></Card></div>
-      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","location","description","severity","status","raised_by","owner","due_by","photo_url"]} rows={rows} onDelete={isAdmin ? remove : undefined} /></Card></div>
+      <div className="md:col-span-2 min-w-0">
+        <Card title={`Records (${rows.length})`}>
+          <div className="mb-3 flex justify-end">
+            <button
+              onClick={refresh}
+              aria-label="Refresh"
+              className="p-2 border rounded-lg text-neutral-600 hover:bg-neutral-100"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" strokeWidth={1.5}
+                   className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round"
+                      d="M16.5 9.75V6.75l3.75 3.75L16.5 14.25v-3a6.75 6.75 0 10-6 6.68"/>
+              </svg>
+            </button>
+          </div>
+          <DataTable columns=["date","location","description","severity","status","raised_by","owner","due_by","photo_url"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
+        </Card>
+      </div>
     </section>
   );
 }
@@ -468,7 +522,25 @@ function MaterialsLog({isAdmin}){
         {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
         {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
       </div></Card></div>
-      <div className="md:col-span-2 min-w-0"><Card title={`Records (${rows.length})`}><DataTable columns={["date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url"]} rows={rows} onDelete={isAdmin ? remove : undefined} /></Card></div>
+      <div className="md:col-span-2 min-w-0">
+        <Card title={`Records (${rows.length})`}>
+          <div className="mb-3 flex justify-end">
+            <button
+              onClick={refresh}
+              aria-label="Refresh"
+              className="p-2 border rounded-lg text-neutral-600 hover:bg-neutral-100"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" strokeWidth={1.5}
+                   className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round"
+                      d="M16.5 9.75V6.75l3.75 3.75L16.5 14.25v-3a6.75 6.75 0 10-6 6.68"/>
+              </svg>
+            </button>
+          </div>
+          <DataTable columns=["date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
+        </Card>
+      </div>
     </section>
   );
 }
