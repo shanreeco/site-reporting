@@ -270,7 +270,7 @@ function Dashboard({profile}){
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">
       <header className="px-6 pt-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/70 dark:bg-neutral-800/70 backdrop-blur">
         <div className="flex flex-wrap items-center gap-3 max-w-7xl mx-auto">
-          <h1 className="text-xl font-semibold">Reeco's Site Reporting</h1>
+          <h1 className="text-xl font-semibold">[Name]'s Site Reporting</h1>
           <span className="text-xs text-neutral-600 dark:text-neutral-300 px-2 py-1 rounded-full border border-neutral-200 dark:border-neutral-700">{profile.email} · {profile.role}</span>
           <div className="ml-auto"><button onClick={()=>supabase.auth.signOut()} className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded">Sign out</button></div>
         </div>
