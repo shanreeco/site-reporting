@@ -15,6 +15,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+const today = () => new Date().toISOString().slice(0, 10);
 // --------- SUPABASE ---------
 const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || "https://YOUR-PROJECT.supabase.co";
 const supabaseAnon = import.meta.env?.VITE_SUPABASE_ANON_KEY || "YOUR-ANON-KEY";
@@ -88,8 +89,8 @@ function AuthPage(){
   };
 
   return (
-    <div className="min-h-screen grid place-items-center bg-neutral-50 px-4">
-      <div className="w-full max-w-sm bg-white border rounded-2xl p-6 shadow-sm">
+    <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 px-4">
+      <div className="w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
         <h1 className="text-lg font-semibold mb-2">{signup ? 'Create account' : 'Sign in'}</h1>
         {MISCONFIGURED && (
           <div className="mb-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
@@ -141,10 +142,10 @@ export default function App(){
   const { session, profile, err } = useSessionProfile();
 
   if (!session) return <AuthPage/>;
-  if (profile === undefined) return <div className="min-h-screen grid place-items-center">Loading profile…</div>;
-  if (err) return <div className="min-h-screen grid place-items-center text-red-700">{err}</div>;
+  if (profile === undefined) return <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">Loading profile…</div>;
+  if (err) return <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-red-700 dark:text-red-300">{err}</div>;
   if (profile === null) return (
-    <div className="min-h-screen grid place-items-center text-red-700">
+    <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-red-700 dark:text-red-300">
       <div className="text-center">
         <p>Profile not found.</p>
         <button onClick={()=>supabase.auth.signOut()} className="underline mt-2">Sign out</button>
@@ -193,7 +194,7 @@ async function uploadToBucket(bucket, file){
 }
 
 // ========= Reusable UI =========
-function Card({title, children}){return (<div className="bg-white border rounded-2xl p-4 shadow-sm">{title && <h3 className="text-lg font-semibold mb-3">{title}</h3>}{children}</div>);} 
+function Card({title, children}){return (<div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-4 shadow-sm">{title && <h3 className="text-lg font-semibold mb-3">{title}</h3>}{children}</div>);}
 function FormGrid({children}){return <div className="grid grid-cols-1 gap-2">{children}</div>;}
 function Input({label, value, onChange, type="text"}){
   const extra = ['date', 'time'].includes(type) ? 'appearance-none h-10' : '';
@@ -214,9 +215,9 @@ function Select({label, value, onChange, options}){return (<label className="tex
 function DataTable({columns, rows, onDelete}){
     const showActions = typeof onDelete === 'function';
   return (
-    <div className="overflow-x-auto border rounded-xl">
+    <div className="overflow-x-auto border border-neutral-200 dark:border-neutral-700 rounded-xl">
       <table className="min-w-full text-sm">
-        <thead className="bg-neutral-50">
+        <thead className="bg-neutral-50 dark:bg-neutral-800">
           <tr>
             {columns.map(c=> <th key={c} className="text-left px-3 py-2 border-b whitespace-nowrap capitalize">{c.replaceAll('_',' ')}</th>)}
             {showActions && <th className="px-3 py-2 border-b text-right">Actions</th>}
@@ -224,12 +225,12 @@ function DataTable({columns, rows, onDelete}){
         </thead>
         <tbody>
           {rows.map(r=> (
-            <tr key={r.id} className="odd:bg-white even:bg-neutral-50">
+            <tr key={r.id} className="odd:bg-white even:bg-neutral-50 dark:odd:bg-neutral-900 dark:even:bg-neutral-800">
               {columns.map(c=> (<td key={c} className="px-3 py-2 border-b align-top whitespace-pre-wrap">{String(r[c]??'')}</td>))}
               {showActions && <td className="px-3 py-2 border-b text-right"><button onClick={()=>onDelete(r.id)} className="text-red-600 hover:underline">Delete</button></td>}
             </tr>
           ))}
-          {rows.length===0 && <tr><td className="px-3 py-6 text-center text-neutral-500" colSpan={columns.length + (showActions?1:0)}>No data</td></tr>}
+          {rows.length===0 && <tr><td className="px-3 py-6 text-center text-neutral-500 dark:text-neutral-400" colSpan={columns.length + (showActions?1:0)}>No data</td></tr>}
         </tbody>
       </table>
     </div>
@@ -241,7 +242,7 @@ function RefreshButton({ onClick }) {
     <button
       onClick={onClick}
       aria-label="Refresh"
-      className="p-2 border rounded-lg text-neutral-600 hover:bg-neutral-100"
+      className="p-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -266,17 +267,17 @@ function Dashboard({profile}){
   const isAdmin = profile?.role === 'admin';
   const [tab,setTab] = React.useState('dashboard');
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <header className="px-6 pt-6 border-b bg-white/70 backdrop-blur">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">
+      <header className="px-6 pt-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/70 dark:bg-neutral-800/70 backdrop-blur">
         <div className="flex flex-wrap items-center gap-3 max-w-7xl mx-auto">
           <h1 className="text-xl font-semibold">Reeco's Site Reporting</h1>
-          <span className="text-xs text-neutral-600 px-2 py-1 rounded-full border">{profile.email} · {profile.role}</span>
-          <div className="ml-auto"><button onClick={()=>supabase.auth.signOut()} className="px-3 py-2 border rounded">Sign out</button></div>
+          <span className="text-xs text-neutral-600 dark:text-neutral-300 px-2 py-1 rounded-full border border-neutral-200 dark:border-neutral-700">{profile.email} · {profile.role}</span>
+          <div className="ml-auto"><button onClick={()=>supabase.auth.signOut()} className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded">Sign out</button></div>
         </div>
         <div className="max-w-7xl mx-auto">
           <nav className="mt-4 flex gap-2 flex-wrap">
             {[['dashboard','Dashboard'],['concrete','Concrete'],['manpower','Manpower'],['issues','Issues'],['materials','Materials']].map(([k,l])=> (
-              <button key={k} onClick={()=>setTab(k)} className={`px-3 py-1.5 rounded-full border ${tab===k?"bg-neutral-900 text-white":"bg-white hover:bg-neutral-100"}`}>{l}</button>
+              <button key={k} onClick={()=>setTab(k)} className={`px-3 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-700 ${tab===k?"bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900":"bg-white hover:bg-neutral-100 dark:bg-neutral-800 dark:hover:bg-neutral-700"}`}>{l}</button>
             ))}
           </nav>
         </div>
@@ -373,8 +374,9 @@ function DashboardTab(){
 // ========= Sections =========
 function ConcreteLog({isAdmin}){
   const { rows, insert, remove, clearAll, refresh } = useTable('concrete');
-  const [d,setD]=React.useState({ date:'', pour_id:'', location:'', element:'', volume:'', mix:'', supplier:'', start_time:'', end_time:'', cubes:'', supervisor:'', notes:'' });
-  const add = async()=>{ if(!d.date||!d.location||!d.element) return alert('Date, Location, Element required'); await insert(d); setD({ date:'', pour_id:'', location:'', element:'', volume:'', mix:'', supplier:'', start_time:'', end_time:'', cubes:'', supervisor:'', notes:'' }); };
+  const newConcrete = () => ({ date: today(), pour_id:'', location:'', element:'', volume:'', mix:'', supplier:'', start_time:'', end_time:'', cubes:'', supervisor:'', notes:'' });
+  const [d,setD]=React.useState(newConcrete());
+  const add = async()=>{ if(!d.date||!d.location||!d.element) return alert('Date, Location, Element required'); await insert(d); setD(newConcrete()); };  
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes","created_at"]; download(`concrete_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
     <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -411,8 +413,9 @@ function ConcreteLog({isAdmin}){
 
 function ManpowerLog({isAdmin}){
   const { rows, insert, remove, clearAll, refresh } = useTable('manpower');
-  const [d,setD]=React.useState({ date:'', contractor:'', trade:'', workers:'', hours:'', zone:'', supervisor:'', notes:'' });
-  const add = async()=>{ if(!d.date||!d.contractor||!d.trade) return alert('Date, Contractor, Trade required'); await insert(d); setD({ date:'', contractor:'', trade:'', workers:'', hours:'', zone:'', supervisor:'', notes:'' }); };
+  const newManpower = () => ({ date: today(), contractor:'', trade:'', workers:'', hours:'', zone:'', supervisor:'', notes:'' });
+  const [d,setD]=React.useState(newManpower());
+  const add = async()=>{ if(!d.date||!d.contractor||!d.trade) return alert('Date, Contractor, Trade required'); await insert(d); setD(newManpower()); };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","contractor","trade","workers","hours","zone","supervisor","notes","created_at"]; download(`manpower_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
     <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -445,12 +448,13 @@ function ManpowerLog({isAdmin}){
 
 function IssuesLog({isAdmin}){
   const { rows, insert, remove, clearAll, refresh } = useTable('issues');
-  const [d,setD]=React.useState({ date:'', location:'', description:'', severity:'', status:'Open', raised_by:'', owner:'', due_by:'', photo_url:'' });
+  const newIssue = () => ({ date: today(), location:'', description:'', severity:'', status:'Open', raised_by:'', owner:'', due_by: today(), photo_url:'' });
+  const [d,setD]=React.useState(newIssue());
   const [file,setFile]=React.useState(null);
   const add = async()=>{
     if(!d.date||!d.location||!d.description) return alert('Date, Location, Description required');
     let url=d.photo_url; if(file){ try{ url = await uploadToBucket('issue-photos', file);}catch(e){ alert(e.message);} }
-    await insert({ ...d, photo_url:url }); setD({ date:'', location:'', description:'', severity:'', status:'Open', raised_by:'', owner:'', due_by:'', photo_url:'' }); setFile(null);
+    await insert({ ...d, photo_url:url }); setD(newIssue()); setFile(null);
   };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","location","description","severity","status","raised_by","owner","due_by","photo_url","created_at"]; download(`issues_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
@@ -485,12 +489,13 @@ function IssuesLog({isAdmin}){
 
 function MaterialsLog({isAdmin}){
   const { rows, insert, remove, clearAll, refresh } = useTable('materials');
-  const [d,setD]=React.useState({ date:'', type:'Request', item:'', spec:'', qty:'', unit:'', needed_by:'', supplier:'', po:'', status:'Pending', location:'', requester:'', photo_url:'' });
+  const newMaterial = () => ({ date: today(), type:'Request', item:'', spec:'', qty:'', unit:'', needed_by: today(), supplier:'', po:'', status:'Pending', location:'', requester:'', photo_url:'' });
+  const [d,setD]=React.useState(newMaterial());
   const [file,setFile]=React.useState(null);
   const add = async()=>{
     if(!d.date||!d.item) return alert('Date and Item required');
     let url=d.photo_url; if(file){ try{ url = await uploadToBucket('delivery-photos', file);}catch(e){ alert(e.message);} }
-    await insert({ ...d, photo_url:url }); setD({ date:'', type:'Request', item:'', spec:'', qty:'', unit:'', needed_by:'', supplier:'', po:'', status:'Pending', location:'', requester:'', photo_url:'' }); setFile(null);
+    await insert({ ...d, photo_url:url }); setD(newMaterial()); setFile(null);
   };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url","created_at"]; download(`materials_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
