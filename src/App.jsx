@@ -269,7 +269,7 @@ function Dashboard({profile}){
     <div className="min-h-screen bg-neutral-50">
       <header className="px-6 pt-6 border-b bg-white/70 backdrop-blur">
         <div className="flex flex-wrap items-center gap-3 max-w-7xl mx-auto">
-          <h1 className="text-xl font-semibold">Construction Site Reporting</h1>
+          <h1 className="text-xl font-semibold">Reeco's Site Reporting</h1>
           <span className="text-xs text-neutral-600 px-2 py-1 rounded-full border">{profile.email} · {profile.role}</span>
           <div className="ml-auto"><button onClick={()=>supabase.auth.signOut()} className="px-3 py-2 border rounded">Sign out</button></div>
         </div>
@@ -378,7 +378,7 @@ function ConcreteLog({isAdmin}){
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes","created_at"]; download(`concrete_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
     <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div><Card title="Add Concrete"><FormGrid>
+      <div><Card title="Concrete Log Form"><FormGrid>
         <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
         <Input label="Pour ID / Ref" value={d.pour_id} onChange={v=>setD({...d,pour_id:v})} />
         <Input label="Location / Zone" value={d.location} onChange={v=>setD({...d,location:v})} />
