@@ -38,32 +38,32 @@ function useSessionProfile(){
   },[]);
 
   // load or create profile
-  useEffect(()=>{
-    (async()=>{
+  const loadProfile = async()=>{
       setErr("");
       if (!session?.user) { setProfile(null); return; }
       try {
         let { data, error } = await supabase
-          .from('profiles').select('id,email,role')
+          .from('profiles').select('id,email,role,full_name,ic_last4')
           .eq('id', session.user.id).maybeSingle();
         if (error) throw error;
         if (!data) {
           const { error: insErr } = await supabase
             .from('profiles')
-            .insert({ id: session.user.id, email: session.user.email });
+            .insert({ id: session.user.id, email: session.user.email, full_name: null, ic_last4: null });
           if (insErr) throw insErr;
           ({ data, error } = await supabase
-            .from('profiles').select('id,email,role')
+            .from('profiles').select('id,email,role,full_name,ic_last4')
             .eq('id', session.user.id).maybeSingle());
           if (error) throw error;
         }
-             if (!data) { setErr('Profile not found'); setProfile(null); return; }
+        if (!data) { setErr('Profile not found'); setProfile(null); return; }
         setProfile(data);
       } catch(e){ setErr(e.message || String(e)); setProfile(null); }
-    })();
-  },[session?.user?.id]);
+  };
 
-  return { session, profile, isAdmin: profile?.role==='admin', err };
+  useEffect(()=>{ loadProfile(); },[session?.user?.id]);
+
+  return { session, profile, isAdmin: profile?.role==='admin', err, refreshProfile: loadProfile };
 }
 
 // --------- Auth Page ---------
@@ -137,9 +137,44 @@ function AuthPage(){
   );
 }
 
+function ProfileSetup({ session, profile, refreshProfile }){
+  const [fullName, setFullName] = useState(profile.full_name || "");
+  const [icLast4, setIcLast4] = useState(profile.ic_last4 || "");
+  const [msg, setMsg] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMsg("");
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: fullName || null, ic_last4: icLast4 || null })
+        .eq('id', session.user.id);
+      if (error) throw error;
+      await refreshProfile();
+    } catch (e) {
+      setMsg(e.message || String(e));
+    }
+  };
+
+  return (
+    <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 px-4">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
+        <h1 className="text-lg font-semibold mb-4">Complete your profile</h1>
+        <div className="grid gap-2 mb-3">
+          <Input label="Full Name" value={fullName} onChange={setFullName} />
+          <Input label="IC Last 4" value={icLast4} onChange={setIcLast4} />
+        </div>
+        {msg && <p className="text-xs text-red-600 mb-2">{msg}</p>}
+        <button type="submit" className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white">Save</button>
+      </form>
+    </div>
+  );
+}
+
 // --------- Root App + Dashboard Shell ---------
 export default function App(){
-  const { session, profile, err } = useSessionProfile();
+  const { session, profile, err, refreshProfile } = useSessionProfile();
 
   if (!session) return <AuthPage/>;
   if (profile === undefined) return <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">Loading profile…</div>;
@@ -152,6 +187,7 @@ export default function App(){
       </div>
     </div>
   );
+    if (!profile.full_name || !profile.ic_last4) return <ProfileSetup session={session} profile={profile} refreshProfile={refreshProfile} />;
   return <Dashboard profile={profile}/>;
 }
 
@@ -270,7 +306,7 @@ function Dashboard({profile}){
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">
       <header className="px-6 pt-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/70 dark:bg-neutral-800/70 backdrop-blur">
         <div className="flex flex-wrap items-center gap-3 max-w-7xl mx-auto">
-          <h1 className="text-xl font-semibold">[Name]'s Site Reporting</h1>
+          <h1 className="text-xl font-semibold">{profile.full_name.split(' ')[0]}'s Site Reporting</h1>
           <span className="text-xs text-neutral-600 dark:text-neutral-300 px-2 py-1 rounded-full border border-neutral-200 dark:border-neutral-700">{profile.email} · {profile.role}</span>
           <div className="ml-auto"><button onClick={()=>supabase.auth.signOut()} className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded">Sign out</button></div>
         </div>
