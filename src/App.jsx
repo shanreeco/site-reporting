@@ -140,11 +140,26 @@ function AuthPage(){
 function ProfileSetup({ session, profile, refreshProfile }){
   const [fullName, setFullName] = useState(profile.full_name || "");
   const [icLast4, setIcLast4] = useState(profile.ic_last4 || "");
+    const [icErr, setIcErr] = useState("");
   const [msg, setMsg] = useState("");
+
+    const handleIcChange = (val) => {
+    setIcLast4(val);
+    if (val === "" || /^\d{4}$/.test(val)) {
+      setIcErr("");
+    } else {
+      setIcErr("IC Last 4 must be exactly four digits.");
+    }
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMsg("");
+        if (!/^\d{4}$/.test(icLast4)) {
+      setMsg("IC Last 4 must be exactly four digits.");
+      return;
+    }
     try {
       const { error } = await supabase
         .from('profiles')
@@ -162,10 +177,29 @@ function ProfileSetup({ session, profile, refreshProfile }){
       <form onSubmit={handleSubmit} className="w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
         <h1 className="text-lg font-semibold mb-4">Complete your profile</h1>
         <div className="grid gap-2 mb-3">
-          <Input label="Full Name" value={fullName} onChange={setFullName} />
+          <Input label={profile.full_name || "Full Name"} value={fullName} onChange={setFullName} />
+                    <div>
+            <Input
+              label="IC Last 4"
+              value={icLast4}
+              onChange={handleIcChange}
+              inputMode="numeric"
+              pattern="\d{4}"
+              maxLength={4}
+              className={icErr ? 'border-red-500 dark:border-red-700' : ''}
+            />
+            {icErr && <p className="text-xs text-red-600 mt-1">{icErr}</p>}
+          </div>
           <Input label="IC Last 4" value={icLast4} onChange={setIcLast4} />
         </div>
         {msg && <p className="text-xs text-red-600 mb-2">{msg}</p>}
+                <button
+          type="submit"
+          disabled={!!icErr || icLast4.length !== 4}
+          className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white disabled:opacity-50"
+        >
+          Save
+        </button>
         <button type="submit" className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white">Save</button>
       </form>
     </div>
@@ -232,7 +266,7 @@ async function uploadToBucket(bucket, file){
 // ========= Reusable UI =========
 function Card({title, children}){return (<div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-4 shadow-sm">{title && <h3 className="text-lg font-semibold mb-3">{title}</h3>}{children}</div>);}
 function FormGrid({children}){return <div className="grid grid-cols-1 gap-2">{children}</div>;}
-function Input({label, value, onChange, type="text"}){
+function Input({label, value, onChange, type="text", className="", ...props}){
   const extra = ['date', 'time'].includes(type) ? 'appearance-none h-10' : '';
   return (
     <label className="text-sm">
@@ -241,7 +275,8 @@ function Input({label, value, onChange, type="text"}){
         type={type}
         value={value || ""}
         onChange={e => onChange(e.target.value)}
-        className={`w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 ${extra}`}
+                className={`w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 ${extra} ${className}`}
+        {...props}
       />
     </label>
   );
@@ -302,12 +337,16 @@ function RefreshButton({ onClick }) {
 function Dashboard({profile}){
   const isAdmin = profile?.role === 'admin';
   const [tab,setTab] = React.useState('dashboard');
+    const firstName = profile.full_name?.split(' ')[0] || 'User';
+  React.useEffect(() => {
+    document.title = `${firstName}'s Site Reporting`;
+  }, [firstName]);
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">
       <header className="px-6 pt-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/70 dark:bg-neutral-800/70 backdrop-blur">
         <div className="flex flex-wrap items-center gap-3 max-w-7xl mx-auto">
           <h1 className="text-xl font-semibold">{profile.full_name.split(' ')[0]}'s Site Reporting</h1>
-          <span className="text-xs text-neutral-600 dark:text-neutral-300 px-2 py-1 rounded-full border border-neutral-200 dark:border-neutral-700">{profile.email} · {profile.role}</span>
+          <h1 className="text-xl font-semibold">{firstName}'s Site Reporting</h1>
           <div className="ml-auto"><button onClick={()=>supabase.auth.signOut()} className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded">Sign out</button></div>
         </div>
         <div className="max-w-7xl mx-auto">
