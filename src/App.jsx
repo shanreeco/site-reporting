@@ -99,11 +99,11 @@ function AuthPage(){
         )}
         <input type="email" placeholder="name@company.com" value={email}
                onChange={e=>setEmail(e.target.value)}
-               className="w-full border rounded-lg px-3 py-2 mb-2" />
+               className="w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 mb-2 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400" />
         <div className="relative mb-3">
           <input type={showPass ? 'text' : 'password'} placeholder="Password" value={password}
                  onChange={e=>setPassword(e.target.value)}
-                 className="w-full border rounded-lg px-3 py-2 pr-10" />
+                 className="w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 pr-10 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400" />
           <button type="button" aria-label="Show password"
                   onMouseDown={()=>setShowPass(true)}
                   onMouseUp={()=>setShowPass(false)}
@@ -205,13 +205,13 @@ function Input({label, value, onChange, type="text"}){
         type={type}
         value={value || ""}
         onChange={e => onChange(e.target.value)}
-        className={`w-full border rounded-lg px-3 py-2 ${extra}`}
+        className={`w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 ${extra}`}
       />
     </label>
   );
 }
-function TextArea({label, value, onChange}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><textarea value={value||""} onChange={e=>onChange(e.target.value)} className="w-full border rounded-lg px-3 py-2 h-24" /></label>);} 
-function Select({label, value, onChange, options}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><select value={value||""} onChange={e=>onChange(e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg"><option value="">-- Select --</option>{options.map(opt=> <option key={opt} value={opt}>{opt}</option>)}</select></label>);} 
+function TextArea({label, value, onChange}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><textarea value={value||""} onChange={e=>onChange(e.target.value)} className="w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 h-24 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400" /></label>);}
+function Select({label, value, onChange, options}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><select value={value||""} onChange={e=>onChange(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg"><option value="">-- Select --</option>{options.map(opt=> <option key={opt} value={opt}>{opt}</option>)}</select></label>);}
 function DataTable({columns, rows, onDelete}){
     const showActions = typeof onDelete === 'function';
   return (
