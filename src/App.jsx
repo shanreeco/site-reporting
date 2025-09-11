@@ -177,8 +177,7 @@ function ProfileSetup({ session, profile, refreshProfile }){
       <form onSubmit={handleSubmit} className="w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
         <h1 className="text-lg font-semibold mb-4">Complete your profile</h1>
         <div className="grid gap-2 mb-3">
-          <Input label={profile.full_name || "Full Name"} value={fullName} onChange={setFullName} />
-                    <div>
+           <div>
             <Input
               label="IC Last 4"
               value={icLast4}
@@ -190,17 +189,15 @@ function ProfileSetup({ session, profile, refreshProfile }){
             />
             {icErr && <p className="text-xs text-red-600 mt-1">{icErr}</p>}
           </div>
-          <Input label="IC Last 4" value={icLast4} onChange={setIcLast4} />
         </div>
         {msg && <p className="text-xs text-red-600 mb-2">{msg}</p>}
-                <button
+        <button
           type="submit"
           disabled={!!icErr || icLast4.length !== 4}
           className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white disabled:opacity-50"
         >
           Save
         </button>
-        <button type="submit" className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white">Save</button>
       </form>
     </div>
   );
