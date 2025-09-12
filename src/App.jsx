@@ -535,7 +535,7 @@ function DashboardTab(){
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis />
-            <Tooltip />
+            <Tooltip cursor={{ fill: 'transparent' }} />
             <Bar dataKey="volume" fill="#8884d8" />
           </BarChart>
         </ResponsiveContainer>
@@ -546,7 +546,7 @@ function DashboardTab(){
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis />
-            <Tooltip />
+            <Tooltip cursor={{ fill: 'transparent' }} />
             <Line type="monotone" dataKey="workers" stroke="#82ca9d" />
           </LineChart>
         </ResponsiveContainer>
@@ -559,7 +559,7 @@ function DashboardTab(){
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip />
+            <Tooltip cursor={{ fill: 'transparent' }} />
             <Legend />
           </PieChart>
         </ResponsiveContainer>
