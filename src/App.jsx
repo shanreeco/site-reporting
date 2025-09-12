@@ -145,19 +145,19 @@ function ProfileSetup({ session, profile, refreshProfile }){
 
     const handleIcChange = (val) => {
     setIcLast4(val);
-    if (val === "" || /^\d{4}$/.test(val)) {
+    if (val === "" || /^\d{3}[A-Za-z]$/.test(val)) {
       setIcErr("");
     } else {
-      setIcErr("IC Last 4 must be exactly four digits.");
+      setIcErr("IC Last 4 must be three digits followed by a letter.");
     }
   };
 
 
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
     setMsg("");
-        if (!/^\d{4}$/.test(icLast4)) {
-      setMsg("IC Last 4 must be exactly four digits.");
+        if (!/^\d{3}[A-Za-z]$/.test(icLast4)) {
+      setMsg("IC Last 4 must be three digits followed by a letter.");
       return;
     }
     try {
@@ -178,15 +178,15 @@ function ProfileSetup({ session, profile, refreshProfile }){
         <h1 className="text-lg font-semibold mb-4">Complete your profile</h1>
         <div className="grid gap-2 mb-3">
            <div>
-            <Input
-              label="IC Last 4"
-              value={icLast4}
-              onChange={handleIcChange}
-              inputMode="numeric"
-              pattern="\d{4}"
-              maxLength={4}
-              className={icErr ? 'border-red-500 dark:border-red-700' : ''}
-            />
+              <Input
+                label="IC Last 4"
+                value={icLast4}
+                onChange={handleIcChange}
+                inputMode="text"
+                pattern="\d{3}[A-Za-z]"
+                maxLength={4}
+                className={icErr ? 'border-red-500 dark:border-red-700' : ''}
+              />
             {icErr && <p className="text-xs text-red-600 mt-1">{icErr}</p>}
           </div>
         </div>
