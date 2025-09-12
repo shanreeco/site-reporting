@@ -140,10 +140,10 @@ function AuthPage(){
 function ProfileSetup({ session, profile, refreshProfile }){
   const [fullName, setFullName] = useState(profile.full_name || "");
   const [icLast4, setIcLast4] = useState(profile.ic_last4 || "");
-    const [icErr, setIcErr] = useState("");
+  const [icErr, setIcErr] = useState("");
   const [msg, setMsg] = useState("");
 
-    const handleIcChange = (val) => {
+  const handleIcChange = (val) => {
     setIcLast4(val);
     if (val === "" || /^\d{3}[A-Za-z]$/.test(val)) {
       setIcErr("");
@@ -152,18 +152,21 @@ function ProfileSetup({ session, profile, refreshProfile }){
     }
   };
 
-
-    const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setMsg("");
-        if (!/^\d{3}[A-Za-z]$/.test(icLast4)) {
+    if (!fullName.trim()) {
+      setMsg("Full Name is required.");
+      return;
+    }
+    if (!/^\d{3}[A-Za-z]$/.test(icLast4)) {
       setMsg("IC Last 4 must be three digits followed by a letter.");
       return;
     }
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ full_name: fullName || null, ic_last4: icLast4 || null })
+        .update({ full_name: fullName.trim(), ic_last4: icLast4 })
         .eq('id', session.user.id);
       if (error) throw error;
       await refreshProfile();
@@ -177,23 +180,26 @@ function ProfileSetup({ session, profile, refreshProfile }){
       <form onSubmit={handleSubmit} className="w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
         <h1 className="text-lg font-semibold mb-4">Complete your profile</h1>
         <div className="grid gap-2 mb-3">
-           <div>
-              <Input
-                label="IC Last 4"
-                value={icLast4}
-                onChange={handleIcChange}
-                inputMode="text"
-                pattern="\d{3}[A-Za-z]"
-                maxLength={4}
-                className={icErr ? 'border-red-500 dark:border-red-700' : ''}
-              />
+          <div>
+            <Input label="Full Name" value={fullName} onChange={setFullName} />
+          </div>
+          <div>
+            <Input
+              label="IC Last 4"
+              value={icLast4}
+              onChange={handleIcChange}
+              inputMode="text"
+              pattern="\d{3}[A-Za-z]"
+              maxLength={4}
+              className={icErr ? 'border-red-500 dark:border-red-700' : ''}
+            />
             {icErr && <p className="text-xs text-red-600 mt-1">{icErr}</p>}
           </div>
         </div>
         {msg && <p className="text-xs text-red-600 mb-2">{msg}</p>}
         <button
           type="submit"
-          disabled={!!icErr || icLast4.length !== 4}
+          disabled={!!icErr || icLast4.length !== 4 || !fullName.trim()}
           className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white disabled:opacity-50"
         >
           Save
