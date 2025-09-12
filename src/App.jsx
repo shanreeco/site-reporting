@@ -209,6 +209,92 @@ function ProfileSetup({ session, profile, refreshProfile }){
   );
 }
 
+function ProfileEditor({ session, profile, refreshProfile, onClose }){
+  const [fullName, setFullName] = React.useState(profile.full_name || "");
+  const [icLast4, setIcLast4] = React.useState(profile.ic_last4 || "");
+  const [icErr, setIcErr] = React.useState("");
+  const [msg, setMsg] = React.useState("");
+
+  const handleIcChange = (val) => {
+    setIcLast4(val);
+    if (val === "" || /^\d{3}[A-Za-z]$/.test(val)) {
+      setIcErr("");
+    } else {
+      setIcErr("IC Last 4 must be three digits followed by a letter.");
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMsg("");
+    if (!fullName.trim()) {
+      setMsg("Full Name is required.");
+      return;
+    }
+    if (!/^\d{3}[A-Za-z]$/.test(icLast4)) {
+      setMsg("IC Last 4 must be three digits followed by a letter.");
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: fullName.trim(), ic_last4: icLast4 })
+        .eq('id', session.user.id);
+      if (error) throw error;
+      await refreshProfile();
+      onClose();
+    } catch (e) {
+      setMsg(e.message || String(e));
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <form
+        onSubmit={handleSubmit}
+        className="relative w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm"
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-2 right-2 p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-700 rounded"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <h2 className="text-lg font-semibold mb-4">Edit profile</h2>
+        <div className="grid gap-2 mb-3">
+          <div>
+            <Input label="Full Name" value={fullName} onChange={setFullName} />
+          </div>
+          <div>
+            <Input
+              label="IC Last 4"
+              value={icLast4}
+              onChange={handleIcChange}
+              inputMode="text"
+              pattern="\d{3}[A-Za-z]"
+              maxLength={4}
+              className={icErr ? 'border-red-500 dark:border-red-700' : ''}
+            />
+            {icErr && <p className="text-xs text-red-600 mt-1">{icErr}</p>}
+          </div>
+        </div>
+        {msg && <p className="text-xs text-red-600 mb-2">{msg}</p>}
+        <button
+          type="submit"
+          disabled={!!icErr || icLast4.length !== 4 || !fullName.trim()}
+          className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white disabled:opacity-50"
+        >
+          Save
+        </button>
+      </form>
+    </div>
+  );
+}
+
 // --------- Root App + Dashboard Shell ---------
 export default function App(){
   const { session, profile, err, refreshProfile } = useSessionProfile();
@@ -225,7 +311,7 @@ export default function App(){
     </div>
   );
     if (!profile.full_name || !profile.ic_last4) return <ProfileSetup session={session} profile={profile} refreshProfile={refreshProfile} />;
-  return <Dashboard profile={profile}/>;
+  return <Dashboard session={session} profile={profile} refreshProfile={refreshProfile}/>;
 }
 
 // ========= Utilities =========
@@ -337,9 +423,10 @@ function RefreshButton({ onClick }) {
 }
 
 // ========= Dashboard =========
-function Dashboard({profile}){
+function Dashboard({ session, profile, refreshProfile }){
   const isAdmin = profile?.role === 'admin';
-  const [tab,setTab] = React.useState('dashboard');
+  const [tab, setTab] = React.useState('dashboard');
+  const [showProfile, setShowProfile] = React.useState(false);
   const firstName = profile.full_name?.split(' ')[0] || 'User';
   React.useEffect(() => {
     document.title = `${firstName}'s Site Reporting`;
@@ -349,7 +436,31 @@ function Dashboard({profile}){
       <header className="px-6 pt-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/70 dark:bg-neutral-800/70 backdrop-blur">
         <div className="flex flex-wrap items-center gap-3 max-w-7xl mx-auto">
           <h1 className="text-xl font-semibold">{firstName}'s Site Reporting</h1>
-          <div className="ml-auto"><button onClick={()=>supabase.auth.signOut()} className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded">Sign out</button></div>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => setShowProfile(true)}
+              className="p-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                className="w-5 h-5"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 20.25a7.75 7.75 0 0115.5 0" />
+              </svg>
+              <span className="sr-only">Edit profile</span>
+            </button>
+            <button
+              onClick={() => supabase.auth.signOut()}
+              className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
         <div className="max-w-7xl mx-auto">
           <nav className="mt-4 flex gap-2 flex-wrap">
@@ -367,6 +478,15 @@ function Dashboard({profile}){
         {tab==='issues' && <IssuesLog isAdmin={isAdmin} />}
         {tab==='materials' && <MaterialsLog isAdmin={isAdmin} />}
       </main>
+      
+      {showProfile && (
+        <ProfileEditor
+          session={session}
+          profile={profile}
+          refreshProfile={refreshProfile}
+          onClose={() => setShowProfile(false)}
+        />
+      )}
     </div>
   );
 }
