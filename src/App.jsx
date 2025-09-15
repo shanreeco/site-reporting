@@ -546,7 +546,7 @@ function DashboardTab(){
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis />
-            <Tooltip cursor={{ fill: 'transparent' }} />
+            <Tooltip cursor={false} />
             <Line type="monotone" dataKey="workers" stroke="#82ca9d" />
           </LineChart>
         </ResponsiveContainer>
