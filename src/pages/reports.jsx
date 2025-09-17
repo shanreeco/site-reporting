@@ -1,702 +1,500 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Header from "../components/Header";
-import { supabase, MISCONFIGURED } from "../services/supabase";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-} from "recharts";
-const today = () => new Date().toISOString().slice(0, 10);
+import { sampleReports } from "../services/sampleData";
+import { MISCONFIGURED, supabase } from "../services/supabase";
 
-// --------- Session / Profile ---------
-function useSessionProfile(){
-  const [session,setSession]=useState(null);
-  const [profile,setProfile]=useState(undefined); // undefined while loading
-  const [err,setErr]=useState("");
-
-  // track auth session
-  useEffect(()=>{
-    supabase.auth.getSession().then(({data})=> setSession(data.session??null));
-    const { data: listener } = supabase.auth.onAuthStateChange((_e,s)=> setSession(s));
-    return ()=> listener?.subscription?.unsubscribe?.();
-  },[]);
-
-  // load or create profile
-  const loadProfile = async()=>{
-      setErr("");
-      if (!session?.user) { setProfile(null); return; }
-      try {
-        let { data, error } = await supabase
-          .from('profiles').select('id,email,role,full_name,ic_last4')
-          .eq('id', session.user.id).maybeSingle();
-        if (error) throw error;
-        if (!data) {
-          const { error: insErr } = await supabase
-            .from('profiles')
-            .insert({ id: session.user.id, email: session.user.email, full_name: null, ic_last4: null });
-          if (insErr) throw insErr;
-          ({ data, error } = await supabase
-            .from('profiles').select('id,email,role,full_name,ic_last4')
-            .eq('id', session.user.id).maybeSingle());
-          if (error) throw error;
-        }
-        if (!data) { setErr('Profile not found'); setProfile(null); return; }
-        setProfile(data);
-      } catch(e){ setErr(e.message || String(e)); setProfile(null); }
-  };
-
-  useEffect(()=>{ loadProfile(); },[session?.user?.id]);
-
-  return { session, profile, isAdmin: profile?.role==='admin', err, refreshProfile: loadProfile };
+function normalizeStatus(status) {
+  return (status || "").toString().trim().toLowerCase();
 }
 
-// --------- Auth Page ---------
-function AuthPage(){
-  const [email,setEmail] = useState("");
-  const [password,setPassword] = useState("");
-  const [signup,setSignup] = useState(false);
-  const [msg,setMsg] = useState("");
-  const [showPass, setShowPass] = useState(false);
-  
-  const handleAuth = async()=>{
-    setMsg("");
-    if (!email || !password) { setMsg('Email and password are required.'); return; }
-    try {
-      if (signup) {
-        const { error } = await supabase.auth.signUp({ email, password, options:{ emailRedirectTo: window.location.origin } });
-        setMsg(error ? error.message : 'Check your email to confirm sign-up.');
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        setMsg(error ? error.message : '');
-      }
-    } catch(e){ setMsg(e.message || String(e)); }
-  };
-
-  return (
-    <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 px-4">
-      <div className="w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
-        <h1 className="text-lg font-semibold mb-2">{signup ? 'Create account' : 'Sign in'}</h1>
-        {MISCONFIGURED && (
-          <div className="mb-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
-            Supabase keys are not set. In Vercel add <code>VITE_SUPABASE_URL</code> & <code>VITE_SUPABASE_ANON_KEY</code>.
-          </div>
-        )}
-        <input type="email" placeholder="name@company.com" value={email}
-               onChange={e=>setEmail(e.target.value)}
-               className="w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 mb-2 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400" />
-        <div className="relative mb-3">
-          <input type={showPass ? 'text' : 'password'} placeholder="Password" value={password}
-                 onChange={e=>setPassword(e.target.value)}
-                 className="w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 pr-10 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400" />
-          <button type="button" aria-label="Show password"
-                  onMouseDown={()=>setShowPass(true)}
-                  onMouseUp={()=>setShowPass(false)}
-                  onMouseLeave={()=>setShowPass(false)}
-                  onTouchStart={()=>setShowPass(true)}
-                  onTouchEnd={()=>setShowPass(false)}
-                  className="absolute inset-y-0 right-3 flex items-center text-neutral-500">
-            {showPass ? (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 01 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 01-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-              </svg>
-            )}
-          </button>
-        </div>
-        <button onClick={handleAuth}
-                className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white">
-          {signup ? 'Sign up' : 'Sign in'}
-        </button>
-        <p className="text-xs text-neutral-500 mt-3">
-          {signup ? 'Have an account? ' : 'No account? '}
-          <button className="underline" onClick={()=>{ setSignup(!signup); setMsg(''); }}> {signup ? 'Sign in' : 'Create one'} </button>
-        </p>
-        {msg && <p className="text-xs text-red-600 mt-2">{msg}</p>}
-      </div>
-    </div>
-  );
-}
-
-function ProfileSetup({ session, profile, refreshProfile }){
-  const [fullName, setFullName] = useState(profile.full_name || "");
-  const [icLast4, setIcLast4] = useState(profile.ic_last4 || "");
-  const [icErr, setIcErr] = useState("");
-  const [msg, setMsg] = useState("");
-
-  const handleIcChange = (val) => {
-    setIcLast4(val);
-    if (val === "" || /^\d{3}[A-Za-z]$/.test(val)) {
-      setIcErr("");
-    } else {
-      setIcErr("IC Last 4 must be three digits followed by a letter.");
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMsg("");
-    if (!fullName.trim()) {
-      setMsg("Full Name is required.");
-      return;
-    }
-    if (!/^\d{3}[A-Za-z]$/.test(icLast4)) {
-      setMsg("IC Last 4 must be three digits followed by a letter.");
-      return;
-    }
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ full_name: fullName.trim(), ic_last4: icLast4 })
-        .eq('id', session.user.id);
-      if (error) throw error;
-      await refreshProfile();
-    } catch (e) {
-      setMsg(e.message || String(e));
-    }
-  };
-
-  return (
-    <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 px-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
-        <h1 className="text-lg font-semibold mb-4">Complete your profile</h1>
-        <div className="grid gap-2 mb-3">
-          <div>
-            <Input label="Full Name" value={fullName} onChange={setFullName} />
-          </div>
-          <div>
-            <Input
-              label="IC Last 4"
-              value={icLast4}
-              onChange={handleIcChange}
-              inputMode="text"
-              pattern="\d{3}[A-Za-z]"
-              maxLength={4}
-              className={icErr ? 'border-red-500 dark:border-red-700' : ''}
-            />
-            {icErr && <p className="text-xs text-red-600 mt-1">{icErr}</p>}
-          </div>
-        </div>
-        {msg && <p className="text-xs text-red-600 mb-2">{msg}</p>}
-        <button
-          type="submit"
-          disabled={!!icErr || icLast4.length !== 4 || !fullName.trim()}
-          className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white disabled:opacity-50"
-        >
-          Save
-        </button>
-      </form>
-    </div>
-  );
-}
-
-function ProfileEditor({ session, profile, refreshProfile, onClose }){
-  const [fullName, setFullName] = React.useState(profile.full_name || "");
-  const [icLast4, setIcLast4] = React.useState(profile.ic_last4 || "");
-  const [icErr, setIcErr] = React.useState("");
-  const [msg, setMsg] = React.useState("");
-
-  const handleIcChange = (val) => {
-    setIcLast4(val);
-    if (val === "" || /^\d{3}[A-Za-z]$/.test(val)) {
-      setIcErr("");
-    } else {
-      setIcErr("IC Last 4 must be three digits followed by a letter.");
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMsg("");
-    if (!fullName.trim()) {
-      setMsg("Full Name is required.");
-      return;
-    }
-    if (!/^\d{3}[A-Za-z]$/.test(icLast4)) {
-      setMsg("IC Last 4 must be three digits followed by a letter.");
-      return;
-    }
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ full_name: fullName.trim(), ic_last4: icLast4 })
-        .eq('id', session.user.id);
-      if (error) throw error;
-      await refreshProfile();
-      onClose();
-    } catch (e) {
-      setMsg(e.message || String(e));
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <form
-        onSubmit={handleSubmit}
-        className="relative w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm"
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute top-2 right-2 p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-700 rounded"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-        <h2 className="text-lg font-semibold mb-4">Edit profile</h2>
-        <div className="grid gap-2 mb-3">
-          <div>
-            <Input label="Full Name" value={fullName} onChange={setFullName} />
-          </div>
-          <div>
-            <Input
-              label="IC Last 4"
-              value={icLast4}
-              onChange={handleIcChange}
-              inputMode="text"
-              pattern="\d{3}[A-Za-z]"
-              maxLength={4}
-              className={icErr ? 'border-red-500 dark:border-red-700' : ''}
-            />
-            {icErr && <p className="text-xs text-red-600 mt-1">{icErr}</p>}
-          </div>
-        </div>
-        {msg && <p className="text-xs text-red-600 mb-2">{msg}</p>}
-        <button
-          type="submit"
-          disabled={!!icErr || icLast4.length !== 4 || !fullName.trim()}
-          className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white disabled:opacity-50"
-        >
-          Save
-        </button>
-      </form>
-    </div>
-  );
-}
-
-// --------- Root App + Dashboard Shell ---------
-export default function ReportsPage(){
-  const { session, profile, err, refreshProfile } = useSessionProfile();
-
-  if (!session) return <AuthPage/>;
-  if (profile === undefined) return <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">Loading profile…</div>;
-  if (err) return <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-red-700 dark:text-red-300">{err}</div>;
-  if (profile === null) return (
-    <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-red-700 dark:text-red-300">
-      <div className="text-center">
-        <p>Profile not found.</p>
-        <button onClick={()=>supabase.auth.signOut()} className="underline mt-2">Sign out</button>
-      </div>
-    </div>
-  );
-    if (!profile.full_name || !profile.ic_last4) return <ProfileSetup session={session} profile={profile} refreshProfile={refreshProfile} />;
-  return <Dashboard session={session} profile={profile} refreshProfile={refreshProfile}/>;
-}
-
-// ========= Utilities =========
-// newline character used in CSV
-const NL = '\n';
-function toCSV(rows, headerOrder){
-  if (!rows || rows.length===0) return "";
-  const headers = headerOrder ?? Object.keys(rows[0]);
-  const esc = (v)=>{ const s = v==null?"":String(v); return (s.includes(',')||s.includes(NL)||s.includes('"'))? '"'+s.replaceAll('"','""')+'"' : s; };
-  const out=[headers.join(',')];
-  for(const r of rows) out.push(headers.map(h=>esc(r[h])).join(','));
-  return out.join(NL);
-}
-function download(filename, text){
-  const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob); const a = document.createElement('a');
-  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
-
-// Generic loader for tables (RLS will scope to user; admin sees all via policy)
-function useTable(table){
-  const [rows,setRows]=React.useState([]); const [loading,setLoading]=React.useState(true); const [error,setError]=React.useState("");
-  async function refresh(){
-    setLoading(true);
-    const { data, error } = await supabase.from(table).select('*').order('created_at',{ascending:false});
-    setRows(data||[]); setError(error?.message||""); setLoading(false);
+function getDateValue(report, ...keys) {
+  for (const key of keys) {
+    const value = report?.[key];
+    if (!value) continue;
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
   }
-  React.useEffect(()=>{ refresh(); const ch = supabase.channel(`${table}-changes`).on('postgres_changes',{event:'*',schema:'public',table}, refresh).subscribe(); return ()=> supabase.removeChannel(ch); },[]);
-  async function insert(row){ const user = (await supabase.auth.getUser()).data.user; const { error } = await supabase.from(table).insert({ ...row, user_id: user.id }); if (error) alert(error.message); }
-  async function remove(id){ const { error } = await supabase.from(table).delete().eq('id', id); if (error) alert(error.message); }
-  async function clearAll(){ if (!confirm('Delete ALL records?')) return; const { error } = await supabase.from(table).delete().neq('id','00000000-0000-0000-0000-000000000000'); if (error) alert(error.message); }
-  return { rows, loading, error, insert, remove, clearAll, refresh };
+  return null;
 }
 
-async function uploadToBucket(bucket, file){
-  const ext = file.name.split('.').pop(); const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-  const { data, error } = await supabase.storage.from(bucket).upload(path, file, { upsert:false });
-  if (error) throw error; const { data:pub } = await supabase.storage.from(bucket).getPublicUrl(data.path); return pub.publicUrl;
+function formatDate(date) {
+  if (!date) return "Date pending";
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
-// ========= Reusable UI =========
-function Card({title, children}){return (<div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-4 shadow-sm">{title && <h3 className="text-lg font-semibold mb-3">{title}</h3>}{children}</div>);}
-function FormGrid({children}){return <div className="grid grid-cols-1 gap-2">{children}</div>;}
-function Input({label, value, onChange, type="text", className="", ...props}){
-  const extra = ['date', 'time'].includes(type) ? 'appearance-none h-10' : '';
-  return (
-    <label className="text-sm">
-      <div className="text-xs text-neutral-500 mb-1">{label}</div>
-      <input
-        type={type}
-        value={value || ""}
-        onChange={e => onChange(e.target.value)}
-                className={`w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 ${extra} ${className}`}
-        {...props}
-      />
-    </label>
+const relativeFormatter =
+  typeof Intl !== "undefined" && "RelativeTimeFormat" in Intl
+    ? new Intl.RelativeTimeFormat(undefined, { numeric: "auto" })
+    : null;
+
+function formatRelative(date) {
+  if (!date || !relativeFormatter) return "";
+  const now = new Date();
+  const diffMs = date.getTime() - now.getTime();
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  if (Math.abs(diffDays) >= 1) return relativeFormatter.format(diffDays, "day");
+  const diffHours = Math.round(diffMs / (1000 * 60 * 60));
+  return relativeFormatter.format(diffHours, "hour");
+}
+
+function exportReportsToCsv(rows) {
+  if (typeof window === "undefined" || !rows.length) return;
+  const headers = Array.from(
+    rows.reduce((set, row) => {
+      Object.keys(row).forEach((key) => set.add(key));
+      return set;
+    }, new Set()),
   );
-}
-function TextArea({label, value, onChange}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><textarea value={value||""} onChange={e=>onChange(e.target.value)} className="w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 h-24 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400" /></label>);}
-function Select({label, value, onChange, options}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><select value={value||""} onChange={e=>onChange(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg"><option value="">-- Select --</option>{options.map(opt=> <option key={opt} value={opt}>{opt}</option>)}</select></label>);}
-function DataTable({columns, rows, onDelete}){
-    const showActions = typeof onDelete === 'function';
-  return (
-    <div className="overflow-x-auto border border-neutral-200 dark:border-neutral-700 rounded-xl">
-      <table className="min-w-full text-sm">
-        <thead className="bg-neutral-50 dark:bg-neutral-800">
-          <tr>
-            {columns.map(c=> <th key={c} className="text-left px-3 py-2 border-b whitespace-nowrap capitalize">{c.replaceAll('_',' ')}</th>)}
-            {showActions && <th className="px-3 py-2 border-b text-right">Actions</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(r=> (
-            <tr key={r.id} className="odd:bg-white even:bg-neutral-50 dark:odd:bg-neutral-900 dark:even:bg-neutral-800">
-              {columns.map(c=> (<td key={c} className="px-3 py-2 border-b align-top whitespace-pre-wrap">{String(r[c]??'')}</td>))}
-              {showActions && <td className="px-3 py-2 border-b text-right"><button onClick={()=>onDelete(r.id)} className="text-red-600 hover:underline">Delete</button></td>}
-            </tr>
-          ))}
-          {rows.length===0 && <tr><td className="px-3 py-6 text-center text-neutral-500 dark:text-neutral-400" colSpan={columns.length + (showActions?1:0)}>No data</td></tr>}
-        </tbody>
-      </table>
-    </div>
-  );
+  const escape = (value) => {
+    if (value == null) return "";
+    const stringValue = String(value).replace(/"/g, '""');
+    return /[",\n]/.test(stringValue) ? `"${stringValue}"` : stringValue;
+  };
+  const csv = [headers.join(",")];
+  rows.forEach((row) => {
+    csv.push(headers.map((header) => escape(row[header])).join(","));
+  });
+  const blob = new Blob([csv.join("\n")], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `project-reports-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
 }
 
-function RefreshButton({ onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      aria-label="Refresh"
-      className="p-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        className="w-5 h-5"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M16.5 9.75V6.75l3.75 3.75L16.5 14.25v-3a6.75 6.75 0 10-6 6.68"
-        />
-      </svg>
-    </button>
-  );
-}
+const statusBadgeClasses = {
+  pending: "text-amber-700 bg-amber-100",
+  "in-progress": "text-blue-700 bg-blue-100",
+  completed: "text-emerald-700 bg-emerald-100",
+  delayed: "text-rose-700 bg-rose-100",
+  "at-risk": "text-rose-700 bg-rose-100",
+  default: "text-slate-600 bg-slate-100",
+};
 
-// ========= Dashboard =========
-function Dashboard({ session, profile, refreshProfile }){
-  const isAdmin = profile?.role === 'admin';
-  const [tab, setTab] = React.useState('dashboard');
-  const [showProfile, setShowProfile] = React.useState(false);
-  const firstName = profile.full_name?.split(' ')[0] || 'User';
-  React.useEffect(() => {
-    document.title = `${firstName}'s Site Reporting`;
-  }, [firstName]);
-  const tabs = [
-    { value: 'dashboard', label: 'Dashboard' },
-    { value: 'concrete', label: 'Concrete' },
-    { value: 'manpower', label: 'Manpower' },
-    { value: 'issues', label: 'Issues' },
-    { value: 'materials', label: 'Materials' },
-  ];
-  const handleSignOut = () => supabase.auth.signOut();
+const healthBadgeClasses = {
+  "on-track": "text-emerald-700 bg-emerald-100",
+  upcoming: "text-blue-700 bg-blue-100",
+  completed: "text-emerald-700 bg-emerald-100",
+  "at-risk": "text-rose-700 bg-rose-100",
+  default: "text-slate-600 bg-slate-100",
+};
+
+export default function ReportsPage() {
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [timeframe, setTimeframe] = useState("90");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const loadReports = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    setNotice("");
+    try {
+      if (MISCONFIGURED) {
+        setReports(sampleReports);
+        setNotice(
+          "Supabase credentials are not configured. Displaying curated sample reports.",
+        );
+        return;
+      }
+
+      const { data, error: queryError } = await supabase
+        .from("reports")
+        .select("*")
+        .order("report_date", { ascending: false });
+
+      if (queryError) throw queryError;
+      setReports(data ?? []);
+    } catch (err) {
+      console.error("Failed to load reports", err);
+      setError(err.message ?? "Unable to load reports");
+      let fallbackApplied = false;
+      setReports((current) => {
+        if (current.length > 0) return current;
+        if (sampleReports.length > 0) {
+          fallbackApplied = true;
+          return sampleReports;
+        }
+        return current;
+      });
+      if (fallbackApplied) {
+        setNotice("Showing sample reports while we reconnect to the database.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadReports();
+  }, [loadReports]);
+
+  const filteredReports = useMemo(() => {
+    const now = new Date();
+    const startWindow = timeframe === "all" ? null : new Date(now);
+    if (startWindow) {
+      startWindow.setDate(now.getDate() - Number(timeframe));
+    }
+    const term = searchTerm.trim().toLowerCase();
+    return reports.filter((report) => {
+      const status = normalizeStatus(report.status);
+      if (statusFilter !== "all" && status !== statusFilter) {
+        return false;
+      }
+      const reportDate = getDateValue(report, "report_date", "created_at", "date");
+      if (startWindow && reportDate && reportDate < startWindow) {
+        return false;
+      }
+      if (!term) return true;
+      const haystack = [report?.project_name, report?.summary, report?.title, report?.submitted_by]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [reports, statusFilter, timeframe, searchTerm]);
+
+  const statusBreakdown = useMemo(() => {
+    const counts = new Map();
+    reports.forEach((report) => {
+      const status = normalizeStatus(report.status) || "unspecified";
+      counts.set(status, (counts.get(status) || 0) + 1);
+    });
+    return counts;
+  }, [reports]);
+
+  const metrics = useMemo(() => {
+    const projectIds = new Set();
+    let recentReports = 0;
+    let latestDate = null;
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+
+    reports.forEach((report) => {
+      if (report.project_id) {
+        projectIds.add(report.project_id);
+      } else if (report.project_name) {
+        projectIds.add(report.project_name);
+      }
+      const reportDate = getDateValue(report, "report_date", "created_at", "date");
+      if (reportDate) {
+        if (!latestDate || reportDate > latestDate) latestDate = reportDate;
+        if (reportDate >= thirtyDaysAgo) recentReports += 1;
+      }
+    });
+
+    return {
+      totalReports: reports.length,
+      projectCount: projectIds.size,
+      recentReports,
+      lastUpdated: latestDate,
+    };
+  }, [reports]);
+
+  const latestActivity = useMemo(() => {
+    return [...filteredReports]
+      .map((report) => ({
+        report,
+        date: getDateValue(report, "report_date", "created_at", "date"),
+      }))
+      .sort((a, b) => {
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return b.date.getTime() - a.date.getTime();
+      })
+      .slice(0, 6);
+  }, [filteredReports]);
+
+  const handleExport = useCallback(() => {
+    exportReportsToCsv(filteredReports);
+  }, [filteredReports]);
+
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       <Header
-        title={`${firstName}'s Site Reporting`}
-        tabs={tabs}
-        activeTab={tab}
-        onTabChange={setTab}
-        onEditProfile={() => setShowProfile(true)}
-        onSignOut={handleSignOut}
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={loadReports}
+              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+            >
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={filteredReports.length === 0}
+              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none"
+            >
+              Export CSV
+            </button>
+          </div>
+        }
       />
 
-      <main className="p-6 grid gap-4 max-w-7xl mx-auto">
-        {tab==='dashboard' && <DashboardTab />}
-        {tab==='concrete' && <ConcreteLog isAdmin={isAdmin} />}
-        {tab==='manpower' && <ManpowerLog isAdmin={isAdmin} />}
-        {tab==='issues' && <IssuesLog isAdmin={isAdmin} />}
-        {tab==='materials' && <MaterialsLog isAdmin={isAdmin} />}
+      <main className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-12">
+        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="grid gap-6 md:grid-cols-4">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Total reports</p>
+              <p className="mt-2 text-2xl font-semibold">{metrics.totalReports}</p>
+              <p className="text-xs text-slate-500">Across all projects</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Projects covered</p>
+              <p className="mt-2 text-2xl font-semibold">{metrics.projectCount}</p>
+              <p className="text-xs text-slate-500">With at least one update</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Last 30 days</p>
+              <p className="mt-2 text-2xl font-semibold">{metrics.recentReports}</p>
+              <p className="text-xs text-slate-500">Reports submitted</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Last update</p>
+              <p className="mt-2 text-2xl font-semibold">
+                {metrics.lastUpdated ? formatDate(metrics.lastUpdated) : "No data"}
+              </p>
+              <p className="text-xs text-slate-500">
+                {metrics.lastUpdated ? formatRelative(metrics.lastUpdated) : ""}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="grid gap-4 md:grid-cols-4 md:items-end">
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Status</span>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              >
+                <option value="all">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="in-progress">In progress</option>
+                <option value="completed">Completed</option>
+                <option value="delayed">Delayed</option>
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Timeframe</span>
+              <select
+                value={timeframe}
+                onChange={(event) => setTimeframe(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              >
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="180">Last 6 months</option>
+                <option value="365">Last 12 months</option>
+                <option value="all">All time</option>
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-2 text-sm md:col-span-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Search</span>
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search by project, author, or keywords"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+            </label>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter("all");
+                setTimeframe("90");
+                setSearchTerm("");
+              }}
+              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+            >
+              Reset filters
+            </button>
+          </div>
+
+          {notice ? (
+            <p className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+              {notice}
+            </p>
+          ) : null}
+          {error ? (
+            <p className="mt-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </p>
+          ) : null}
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+          <div className="space-y-6">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Latest field reports</h2>
+                  <p className="text-sm text-slate-500">
+                    {filteredReports.length} report{filteredReports.length === 1 ? "" : "s"} in view
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-6">
+                {loading ? (
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className="h-48 animate-pulse rounded-3xl border border-slate-200 bg-white"
+                      />
+                    ))}
+                  </div>
+                ) : filteredReports.length === 0 ? (
+                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/70 p-10 text-center">
+                    <h3 className="text-lg font-semibold text-slate-900">No reports match your filters</h3>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Try broadening your timeframe or clearing the search keywords to surface more
+                      updates.
+                    </p>
+                  </div>
+                ) : (
+                  filteredReports.map((report) => {
+                    const status = normalizeStatus(report.status);
+                    const statusClasses = statusBadgeClasses[status] || statusBadgeClasses.default;
+                    const health = normalizeStatus(report.health);
+                    const healthClasses = healthBadgeClasses[health] || healthBadgeClasses.default;
+                    const reportDate = getDateValue(report, "report_date", "created_at", "date");
+                    return (
+                      <article
+                        key={report.id ?? `${report.project_name}-${report.report_date}`}
+                        className="rounded-3xl border border-slate-200 bg-white/60 p-6 shadow-sm"
+                      >
+                        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <h3 className="text-lg font-semibold text-slate-900">
+                              {report.project_name || report.title || "Project update"}
+                            </h3>
+                            <p className="text-sm text-slate-500">
+                              {report.submitted_by ? `Submitted by ${report.submitted_by}` : ""}
+                              {report.submitted_by && reportDate ? " • " : ""}
+                              {reportDate ? formatDate(reportDate) : "Date pending"}
+                              {reportDate ? ` (${formatRelative(reportDate)})` : ""}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span
+                              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${statusClasses}`}
+                            >
+                              {status.replace(/-/g, " ") || "status"}
+                            </span>
+                            {report.health ? (
+                              <span
+                                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${healthClasses}`}
+                              >
+                                {report.health.replace(/-/g, " ")}
+                              </span>
+                            ) : null}
+                          </div>
+                        </header>
+
+                        {report.summary ? (
+                          <p className="mt-4 text-sm text-slate-600">{report.summary}</p>
+                        ) : null}
+
+                        <dl className="mt-4 grid gap-3 text-xs text-slate-500 sm:grid-cols-3">
+                          {report.site_condition ? (
+                            <div className="rounded-2xl border border-slate-200/70 bg-slate-50/70 px-3 py-2">
+                              <dt className="font-medium text-slate-600">Site condition</dt>
+                              <dd>{report.site_condition}</dd>
+                            </div>
+                          ) : null}
+                          {report.next_steps ? (
+                            <div className="rounded-2xl border border-slate-200/70 bg-slate-50/70 px-3 py-2">
+                              <dt className="font-medium text-slate-600">Next steps</dt>
+                              <dd>{report.next_steps}</dd>
+                            </div>
+                          ) : null}
+                          {report.issues ? (
+                            <div className="rounded-2xl border border-slate-200/70 bg-slate-50/70 px-3 py-2">
+                              <dt className="font-medium text-slate-600">Issues</dt>
+                              <dd>{report.issues}</dd>
+                            </div>
+                          ) : null}
+                        </dl>
+                      </article>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+
+          <aside className="space-y-6">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-base font-semibold text-slate-900">Status overview</h2>
+              <div className="mt-4 space-y-3">
+                {Array.from(statusBreakdown.entries()).map(([status, count]) => (
+                  <div key={status} className="flex items-center justify-between gap-3 text-sm text-slate-600">
+                    <span className="capitalize">{status.replace(/-/g, " ")}</span>
+                    <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">{count}</span>
+                  </div>
+                ))}
+                {statusBreakdown.size === 0 ? (
+                  <p className="text-sm text-slate-500">No reports available yet.</p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-base font-semibold text-slate-900">Recent activity</h2>
+              <div className="mt-4 space-y-4">
+                {latestActivity.length === 0 ? (
+                  <p className="text-sm text-slate-500">No activity within the selected window.</p>
+                ) : (
+                  latestActivity.map(({ report, date }) => (
+                    <div key={report.id ?? `${report.project_name}-${report.report_date}`}
+                      className="rounded-2xl border border-slate-200/70 bg-slate-50/70 px-4 py-3">
+                      <p className="text-sm font-medium text-slate-900">
+                        {report.project_name || report.title || "Project update"}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {date ? formatDate(date) : "Date pending"}
+                        {date ? ` • ${formatRelative(date)}` : ""}
+                      </p>
+                      {report.summary ? (
+                        <p className="mt-1 text-xs text-slate-600">
+                          {report.summary.slice(0, 120)}
+                          {report.summary.length > 120 ? "…" : ""}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </aside>
+        </section>
       </main>
-      
-      {showProfile && (
-        <ProfileEditor
-          session={session}
-          profile={profile}
-          refreshProfile={refreshProfile}
-          onClose={() => setShowProfile(false)}
-        />
-      )}
     </div>
-  );
-}
-
-function DashboardTab(){
-  const { rows: concreteRows } = useTable('concrete');
-  const { rows: manpowerRows } = useTable('manpower');
-  const { rows: materialRows } = useTable('materials');
-
-  const concreteData = React.useMemo(()=>{
-    const byDate = {};
-    for(const r of concreteRows){
-      const d = r.date || '';
-      const v = parseFloat(r.volume) || 0;
-      byDate[d] = (byDate[d]||0) + v;
-    }
-    return Object.entries(byDate).map(([date, volume])=>({ date, volume }));
-  },[concreteRows]);
-
-  const manpowerData = React.useMemo(()=>{
-    const byDate = {};
-    for(const r of manpowerRows){
-      const d = r.date || '';
-      const w = parseFloat(r.workers) || 0;
-      byDate[d] = (byDate[d]||0) + w;
-    }
-    return Object.entries(byDate).map(([date, workers])=>({ date, workers }));
-  },[manpowerRows]);
-
-  const materialData = React.useMemo(()=>{
-    const byStatus = {};
-    for(const r of materialRows){
-      const s = r.status || 'Unknown';
-      byStatus[s] = (byStatus[s]||0) + 1;
-    }
-    return Object.entries(byStatus).map(([name, value])=>({ name, value }));
-  },[materialRows]);
-
-  const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#8dd1e1'];
-
-  return (
-    <section className="grid md:grid-cols-3 gap-4">
-      <Card title="Concrete Volume">
-        <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={concreteData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip cursor={{ fill: 'transparent' }} />
-            <Bar dataKey="volume" fill="#8884d8" />
-          </BarChart>
-        </ResponsiveContainer>
-      </Card>
-      <Card title="Manpower">
-        <ResponsiveContainer width="100%" height={250}>
-          <LineChart data={manpowerData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip cursor={false} />
-            <Line type="monotone" dataKey="workers" stroke="#82ca9d" />
-          </LineChart>
-        </ResponsiveContainer>
-      </Card>
-      <Card title="Material Orders">
-        <ResponsiveContainer width="100%" height={250}>
-          <PieChart>
-            <Pie data={materialData} dataKey="value" nameKey="name" outerRadius={80} label>
-              {materialData.map((entry, index)=>(
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip cursor={{ fill: 'transparent' }} />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
-      </Card>
-    </section>
-  );
-}
-
-// ========= Sections =========
-function ConcreteLog({isAdmin}){
-  const { rows, insert, remove, clearAll, refresh } = useTable('concrete');
-  const newConcrete = () => ({ date: today(), pour_id:'', location:'', element:'', volume:'', mix:'', supplier:'', start_time:'', end_time:'', cubes:'', supervisor:'', notes:'' });
-  const [d,setD]=React.useState(newConcrete());
-  const add = async()=>{ if(!d.date||!d.location||!d.element) return alert('Date, Location, Element required'); await insert(d); setD(newConcrete()); };  
-  const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes","created_at"]; download(`concrete_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
-  return (
-    <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div><Card title="Concrete Log Form"><FormGrid>
-        <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
-        <Input label="Pour ID / Ref" value={d.pour_id} onChange={v=>setD({...d,pour_id:v})} />
-        <Input label="Location / Zone" value={d.location} onChange={v=>setD({...d,location:v})} />
-        <Input label="Element" value={d.element} onChange={v=>setD({...d,element:v})} />
-        <Input label="Volume (m³)" value={d.volume} onChange={v=>setD({...d,volume:v})} />
-        <Input label="Mix / Grade" value={d.mix} onChange={v=>setD({...d,mix:v})} />
-        <Input label="Supplier" value={d.supplier} onChange={v=>setD({...d,supplier:v})} />
-        <Input label="Start Time" type="time" value={d.start_time} onChange={v=>setD({...d,start_time:v})} />
-        <Input label="End Time" type="time" value={d.end_time} onChange={v=>setD({...d,end_time:v})} />
-        <Input label="Cube Samples (qty)" value={d.cubes} onChange={v=>setD({...d,cubes:v})} />
-        <Input label="Supervisor" value={d.supervisor} onChange={v=>setD({...d,supervisor:v})} />
-        <TextArea label="Notes" value={d.notes} onChange={v=>setD({...d,notes:v})} />
-      </FormGrid>
-      <div className="mt-3 flex gap-2 items-center">
-        <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
-        {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
-      </div></Card></div>
-     <div className="md:col-span-2 min-w-0">
-        <Card title={`Records (${rows.length})`}>
-          <div className="mb-3 flex justify-end">
-                        <RefreshButton onClick={refresh} />
-          </div>
-          <DataTable columns={["date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
-        </Card>
-      </div>
-    </section>
-  );
-}
-
-function ManpowerLog({isAdmin}){
-  const { rows, insert, remove, clearAll, refresh } = useTable('manpower');
-  const newManpower = () => ({ date: today(), contractor:'', trade:'', workers:'', hours:'', zone:'', supervisor:'', notes:'' });
-  const [d,setD]=React.useState(newManpower());
-  const add = async()=>{ if(!d.date||!d.contractor||!d.trade) return alert('Date, Contractor, Trade required'); await insert(d); setD(newManpower()); };
-  const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","contractor","trade","workers","hours","zone","supervisor","notes","created_at"]; download(`manpower_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
-  return (
-    <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div><Card title="Add Manpower"><FormGrid>
-        <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
-        <Input label="Contractor" value={d.contractor} onChange={v=>setD({...d,contractor:v})} />
-        <Input label="Trade" value={d.trade} onChange={v=>setD({...d,trade:v})} />
-        <Input label="Workers (count)" value={d.workers} onChange={v=>setD({...d,workers:v})} />
-        <Input label="Hours (per worker)" value={d.hours} onChange={v=>setD({...d,hours:v})} />
-        <Input label="Zone / Area" value={d.zone} onChange={v=>setD({...d,zone:v})} />
-        <Input label="Supervisor" value={d.supervisor} onChange={v=>setD({...d,supervisor:v})} />
-        <TextArea label="Notes" value={d.notes} onChange={v=>setD({...d,notes:v})} />
-      </FormGrid>
-      <div className="mt-3 flex gap-2 items-center">
-        <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
-        {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
-      </div></Card></div>
-      <div className="md:col-span-2 min-w-0">
-        <Card title={`Records (${rows.length})`}>
-          <div className="mb-3 flex justify-end">
-            <RefreshButton onClick={refresh} />
-          </div>
-          <DataTable columns={["date","contractor","trade","workers","hours","zone","supervisor","notes"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
-        </Card>
-      </div>
-    </section>
-  );
-}
-
-function IssuesLog({isAdmin}){
-  const { rows, insert, remove, clearAll, refresh } = useTable('issues');
-  const newIssue = () => ({ date: today(), location:'', description:'', severity:'', status:'Open', raised_by:'', owner:'', due_by: today(), photo_url:'' });
-  const [d,setD]=React.useState(newIssue());
-  const [file,setFile]=React.useState(null);
-  const add = async()=>{
-    if(!d.date||!d.location||!d.description) return alert('Date, Location, Description required');
-    let url=d.photo_url; if(file){ try{ url = await uploadToBucket('issue-photos', file);}catch(e){ alert(e.message);} }
-    await insert({ ...d, photo_url:url }); setD(newIssue()); setFile(null);
-  };
-  const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","location","description","severity","status","raised_by","owner","due_by","photo_url","created_at"]; download(`issues_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
-  return (
-    <section className="grid md:grid-cols-3 gap-4">
-      <div><Card title="Add Issue"><FormGrid>
-        <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
-        <Input label="Location / Zone" value={d.location} onChange={v=>setD({...d,location:v})} />
-        <TextArea label="Description" value={d.description} onChange={v=>setD({...d,description:v})} />
-        <Select label="Severity" value={d.severity} onChange={v=>setD({...d,severity:v})} options={["Low","Medium","High","Critical"]} />
-        <Select label="Status" value={d.status} onChange={v=>setD({...d,status:v})} options={["Open","In Progress","Blocked","Closed"]} />
-        <Input label="Raised By" value={d.raised_by} onChange={v=>setD({...d,raised_by:v})} />
-        <Input label="Owner" value={d.owner} onChange={v=>setD({...d,owner:v})} />
-        <Input label="Due By" type="date" value={d.due_by} onChange={v=>setD({...d,due_by:v})} />
-        <label className="text-sm"><div className="text-xs text-neutral-500 mb-1">Photo</div><input type="file" accept="image/*" onChange={e=>setFile(e.target.files?.[0]||null)} /></label>
-      </FormGrid>
-      <div className="mt-3 flex gap-2 items-center">
-        <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
-        {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
-      </div></Card></div>
-      <div className="md:col-span-2 min-w-0">
-        <Card title={`Records (${rows.length})`}>
-          <div className="mb-3 flex justify-end">
-            <RefreshButton onClick={refresh} />
-          </div>
-          <DataTable columns={["date","location","description","severity","status","raised_by","owner","due_by","photo_url"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
-        </Card>
-      </div>
-    </section>
-  );
-}
-
-function MaterialsLog({isAdmin}){
-  const { rows, insert, remove, clearAll, refresh } = useTable('materials');
-  const newMaterial = () => ({ date: today(), type:'Request', item:'', spec:'', qty:'', unit:'', needed_by: today(), supplier:'', po:'', status:'Pending', location:'', requester:'', photo_url:'' });
-  const [d,setD]=React.useState(newMaterial());
-  const [file,setFile]=React.useState(null);
-  const add = async()=>{
-    if(!d.date||!d.item) return alert('Date and Item required');
-    let url=d.photo_url; if(file){ try{ url = await uploadToBucket('delivery-photos', file);}catch(e){ alert(e.message);} }
-    await insert({ ...d, photo_url:url }); setD(newMaterial()); setFile(null);
-  };
-  const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url","created_at"]; download(`materials_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
-  return (
-    <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div><Card title="Add Material Record"><FormGrid>
-        <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
-        <Select label="Type" value={d.type} onChange={v=>setD({...d,type:v})} options={["Request","Delivery"]} />
-        <Input label="Item" value={d.item} onChange={v=>setD({...d,item:v})} />
-        <Input label="Specification" value={d.spec} onChange={v=>setD({...d,spec:v})} />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2"><Input label="Qty" value={d.qty} onChange={v=>setD({...d,qty:v})} /><Input label="Unit" value={d.unit} onChange={v=>setD({...d,unit:v})} /></div>
-        <Input label="Needed By" type="date" value={d.needed_by} onChange={v=>setD({...d,needed_by:v})} />
-        <Input label="Supplier" value={d.supplier} onChange={v=>setD({...d,supplier:v})} />
-        <Input label="PO / Ref" value={d.po} onChange={v=>setD({...d,po:v})} />
-        <Select label="Status" value={d.status} onChange={v=>setD({...d,status:v})} options={["Pending","Approved","Ordered","Delivered","Cancelled"]} />
-        <Input label="Location / Zone" value={d.location} onChange={v=>setD({...d,location:v})} />
-        <Input label="Requester" value={d.requester} onChange={v=>setD({...d,requester:v})} />
-        <label className="text-sm"><div className="text-xs text-neutral-500 mb-1">Delivery / MR Photo</div><input type="file" accept="image/*" onChange={e=>setFile(e.target.files?.[0]||null)} /></label>
-      </FormGrid>
-      <div className="mt-3 flex gap-2 items-center">
-        <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
-        {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
-      </div></Card></div>
-      <div className="md:col-span-2 min-w-0">
-        <Card title={`Records (${rows.length})`}>
-          <div className="mb-3 flex justify-end">
-            <RefreshButton onClick={refresh} />
-          </div>
-          <DataTable columns={["date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
-        </Card>
-      </div>
-    </section>
   );
 }
