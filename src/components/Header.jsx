@@ -1,60 +1,46 @@
 import React from "react";
+import { Link, NavLink } from "react-router-dom";
 
-export default function Header({
-  title,
-  tabs,
-  activeTab,
-  onTabChange,
-  onEditProfile,
-  onSignOut,
-}) {
-  const baseTabStyles =
-    "px-3 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-700";
-  const activeTabStyles = "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900";
-  const inactiveTabStyles = "bg-white hover:bg-neutral-100 dark:bg-neutral-800 dark:hover:bg-neutral-700";
+const navigation = [
+  { to: "/", label: "Overview" },
+  { to: "/projects", label: "Projects" },
+  { to: "/reports", label: "Reports" },
+];
 
+const baseLinkStyles =
+  "rounded-full px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring focus-visible:ring-blue-500/60";
+
+export default function Header({ actions = null }) {
   return (
-    <header className="px-6 pt-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/70 dark:bg-neutral-800/70 backdrop-blur">
-      <div className="flex flex-wrap items-center gap-3 max-w-7xl mx-auto">
-        <h1 className="text-xl font-semibold">{title}</h1>
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            onClick={onEditProfile}
-            className="p-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              className="w-5 h-5"
+    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-6 py-4">
+        <Link to="/" className="flex items-center gap-3 text-left">
+          <img src="/logo.png" alt="Site Reporting" className="h-10 w-10 rounded-xl border border-slate-200" />
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">Site Reporting</p>
+            <p className="text-base font-semibold text-slate-900">Construction Intelligence Hub</p>
+          </div>
+        </Link>
+
+        <nav className="flex flex-1 flex-wrap items-center justify-end gap-2 text-sm">
+          {navigation.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === "/"}
+              className={({ isActive }) =>
+                `${baseLinkStyles} ${
+                  isActive
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`
+              }
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 20.25a7.75 7.75 0 0115.5 0" />
-            </svg>
-            <span className="sr-only">Edit profile</span>
-          </button>
-          <button
-            onClick={onSignOut}
-            className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded"
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
-      <div className="max-w-7xl mx-auto">
-        <nav className="mt-4 flex gap-2 flex-wrap">
-          {tabs?.map(({ value, label }) => (
-            <button
-              key={value}
-              onClick={() => onTabChange?.(value)}
-              className={`${baseTabStyles} ${value === activeTab ? activeTabStyles : inactiveTabStyles}`}
-            >
-              {label}
-            </button>
+              {item.label}
+            </NavLink>
           ))}
         </nav>
+        {actions ? <div className="ml-auto flex items-center gap-2">{actions}</div> : null}
       </div>
     </header>
   );
