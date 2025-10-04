@@ -83,21 +83,29 @@ function AuthPage(){
   };
 
   return (
-    <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 px-4">
-      <div className="w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
-        <h1 className="text-lg font-semibold mb-2">{signup ? 'Create account' : 'Sign in'}</h1>
+    <div className="min-h-screen grid place-items-center bg-slate-950 text-slate-100 px-4">
+      <div className="w-full max-w-sm rounded-3xl bg-white/90 p-8 text-slate-900 shadow-2xl shadow-slate-900/30 backdrop-blur">
+        <h1 className="text-xl font-semibold mb-2">{signup ? 'Create account' : 'Sign in'}</h1>
         {MISCONFIGURED && (
-          <div className="mb-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
+          <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
             Supabase keys are not set. In Vercel add <code>VITE_SUPABASE_URL</code> & <code>VITE_SUPABASE_ANON_KEY</code>.
           </div>
         )}
-        <input type="email" placeholder="name@company.com" value={email}
-               onChange={e=>setEmail(e.target.value)}
-               className="w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 mb-2 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400" />
+        <input
+          type="email"
+          placeholder="name@company.com"
+          value={email}
+          onChange={e=>setEmail(e.target.value)}
+          className="mb-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+        />
         <div className="relative mb-3">
-          <input type={showPass ? 'text' : 'password'} placeholder="Password" value={password}
-                 onChange={e=>setPassword(e.target.value)}
-                 className="w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 pr-10 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400" />
+          <input
+            type={showPass ? 'text' : 'password'}
+            placeholder="Password"
+            value={password}
+            onChange={e=>setPassword(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-12 text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+          />
           <button type="button" aria-label="Show password"
                   onMouseDown={()=>setShowPass(true)}
                   onMouseUp={()=>setShowPass(false)}
@@ -118,12 +126,12 @@ function AuthPage(){
           </button>
         </div>
         <button onClick={handleAuth}
-                className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white">
+                className="w-full rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-400/40 transition hover:-translate-y-0.5 hover:bg-indigo-500">
           {signup ? 'Sign up' : 'Sign in'}
         </button>
-        <p className="text-xs text-neutral-500 mt-3">
+        <p className="text-xs text-slate-500 mt-3">
           {signup ? 'Have an account? ' : 'No account? '}
-          <button className="underline" onClick={()=>{ setSignup(!signup); setMsg(''); }}> {signup ? 'Sign in' : 'Create one'} </button>
+          <button className="font-semibold text-indigo-600" onClick={()=>{ setSignup(!signup); setMsg(''); }}> {signup ? 'Sign in' : 'Create one'} </button>
         </p>
         {msg && <p className="text-xs text-red-600 mt-2">{msg}</p>}
       </div>
@@ -170,8 +178,8 @@ function ProfileSetup({ session, profile, refreshProfile }){
   };
 
   return (
-    <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 px-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
+    <div className="min-h-screen grid place-items-center bg-slate-950 text-slate-100 px-4">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-3xl bg-white/90 p-8 text-slate-900 shadow-2xl shadow-slate-900/30 backdrop-blur">
         <h1 className="text-lg font-semibold mb-4">Complete your profile</h1>
         <div className="grid gap-2 mb-3">
           <div>
@@ -194,7 +202,7 @@ function ProfileSetup({ session, profile, refreshProfile }){
         <button
           type="submit"
           disabled={!!icErr || icLast4.length !== 4 || !fullName.trim()}
-          className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white disabled:opacity-50"
+          className="w-full rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-400/40 transition hover:-translate-y-0.5 hover:bg-indigo-500 disabled:translate-y-0 disabled:opacity-60 disabled:shadow-none"
         >
           Save
         </button>
@@ -243,16 +251,16 @@ function ProfileEditor({ session, profile, refreshProfile, onClose }){
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur">
       <form
         onSubmit={handleSubmit}
-        className="relative w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm"
+        className="relative w-full max-w-sm rounded-3xl bg-white/95 p-6 text-slate-900 shadow-2xl shadow-slate-900/30 backdrop-blur"
       >
         <button
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-2 right-2 p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-700 rounded"
+          className="absolute top-2 right-2 rounded-full p-2 text-slate-400 transition hover:bg-slate-100"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -280,7 +288,7 @@ function ProfileEditor({ session, profile, refreshProfile, onClose }){
         <button
           type="submit"
           disabled={!!icErr || icLast4.length !== 4 || !fullName.trim()}
-          className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white disabled:opacity-50"
+          className="w-full rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-400/40 transition hover:-translate-y-0.5 hover:bg-indigo-500 disabled:translate-y-0 disabled:opacity-60 disabled:shadow-none"
         >
           Save
         </button>
@@ -294,13 +302,13 @@ export default function ReportsPage(){
   const { session, profile, err, refreshProfile } = useSessionProfile();
 
   if (!session) return <AuthPage/>;
-  if (profile === undefined) return <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">Loading profile…</div>;
-  if (err) return <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-red-700 dark:text-red-300">{err}</div>;
+  if (profile === undefined) return <div className="min-h-screen grid place-items-center bg-slate-950 text-slate-100">Loading profile…</div>;
+  if (err) return <div className="min-h-screen grid place-items-center bg-slate-950 text-red-300">{err}</div>;
   if (profile === null) return (
-    <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-red-700 dark:text-red-300">
+    <div className="min-h-screen grid place-items-center bg-slate-950 text-red-300">
       <div className="text-center">
         <p>Profile not found.</p>
-        <button onClick={()=>supabase.auth.signOut()} className="underline mt-2">Sign out</button>
+        <button onClick={()=>supabase.auth.signOut()} className="mt-2 text-indigo-300 underline">Sign out</button>
       </div>
     </div>
   );
@@ -326,7 +334,7 @@ function download(filename, text){
 }
 
 // Generic loader for tables (RLS will scope to user; admin sees all via policy)
-function useTable(table){
+export function useTable(table){
   const [rows,setRows]=React.useState([]); const [loading,setLoading]=React.useState(true); const [error,setError]=React.useState("");
   async function refresh(){
     setLoading(true);
@@ -347,56 +355,130 @@ async function uploadToBucket(bucket, file){
 }
 
 // ========= Reusable UI =========
-function Card({title, children}){return (<div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-4 shadow-sm">{title && <h3 className="text-lg font-semibold mb-3">{title}</h3>}{children}</div>);}
-function FormGrid({children}){return <div className="grid grid-cols-1 gap-2">{children}</div>;}
-function Input({label, value, onChange, type="text", className="", ...props}){
-  const extra = ['date', 'time'].includes(type) ? 'appearance-none h-10' : '';
+export function Card({ title, subtitle, children, className = "" }) {
   return (
-    <label className="text-sm">
-      <div className="text-xs text-neutral-500 mb-1">{label}</div>
+    <div className={`rounded-3xl border border-slate-200/60 bg-white/90 p-6 text-slate-900 shadow-xl shadow-slate-900/10 backdrop-blur ${className}`}>
+      {(title || subtitle) && (
+        <div className="mb-4 space-y-1">
+          {title && <h3 className="text-xl font-semibold text-slate-900">{title}</h3>}
+          {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
+export function FormGrid({ children }) {
+  return <div className="grid grid-cols-1 gap-3">{children}</div>;
+}
+
+export function Input({ label, value, onChange, type = "text", className = "", ...props }) {
+  const extra = ['date', 'time'].includes(type) ? 'appearance-none h-11' : '';
+  return (
+    <label className="text-sm font-medium text-slate-600">
+      <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</span>
       <input
         type={type}
         value={value || ""}
         onChange={e => onChange(e.target.value)}
-                className={`w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 ${extra} ${className}`}
+        className={`w-full rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-inner shadow-white/60 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 ${extra} ${className}`}
         {...props}
       />
     </label>
   );
 }
-function TextArea({label, value, onChange}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><textarea value={value||""} onChange={e=>onChange(e.target.value)} className="w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 h-24 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400" /></label>);}
-function Select({label, value, onChange, options}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><select value={value||""} onChange={e=>onChange(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg"><option value="">-- Select --</option>{options.map(opt=> <option key={opt} value={opt}>{opt}</option>)}</select></label>);}
-function DataTable({columns, rows, onDelete}){
-    const showActions = typeof onDelete === 'function';
+
+export function TextArea({ label, value, onChange }) {
   return (
-    <div className="overflow-x-auto border border-neutral-200 dark:border-neutral-700 rounded-xl">
+    <label className="text-sm font-medium text-slate-600">
+      <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</span>
+      <textarea
+        value={value || ""}
+        onChange={e => onChange(e.target.value)}
+        className="h-28 w-full rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-inner shadow-white/60 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+      />
+    </label>
+  );
+}
+
+export function Select({ label, value, onChange, options }) {
+  return (
+    <label className="text-sm font-medium text-slate-600">
+      <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</span>
+      <select
+        value={value || ""}
+        onChange={e => onChange(e.target.value)}
+        className="w-full rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+      >
+        <option value="">-- Select --</option>
+        {options.map(opt => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+export function DataTable({ columns, rows = [], onDelete }) {
+  const showActions = typeof onDelete === 'function';
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200/60 bg-white/80 shadow-inner shadow-slate-900/5">
       <table className="min-w-full text-sm">
-        <thead className="bg-neutral-50 dark:bg-neutral-800">
+        <thead className="bg-slate-900/95 text-left text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
           <tr>
-            {columns.map(c=> <th key={c} className="text-left px-3 py-2 border-b whitespace-nowrap capitalize">{c.replaceAll('_',' ')}</th>)}
-            {showActions && <th className="px-3 py-2 border-b text-right">Actions</th>}
+            {columns.map(c => (
+              <th key={c} className="px-4 py-3 text-white/80 whitespace-nowrap">
+                {c.replaceAll('_', ' ')}
+              </th>
+            ))}
+            {showActions && <th className="px-4 py-3 text-right text-white/80">Actions</th>}
           </tr>
         </thead>
-        <tbody>
-          {rows.map(r=> (
-            <tr key={r.id} className="odd:bg-white even:bg-neutral-50 dark:odd:bg-neutral-900 dark:even:bg-neutral-800">
-              {columns.map(c=> (<td key={c} className="px-3 py-2 border-b align-top whitespace-pre-wrap">{String(r[c]??'')}</td>))}
-              {showActions && <td className="px-3 py-2 border-b text-right"><button onClick={()=>onDelete(r.id)} className="text-red-600 hover:underline">Delete</button></td>}
+        <tbody className="divide-y divide-slate-100/60">
+          {rows.map(r => (
+            <tr key={r.id} className="bg-white/80 hover:bg-indigo-50/60">
+              {columns.map(c => (
+                <td key={c} className="px-4 py-3 align-top whitespace-pre-wrap text-slate-700">
+                  {String(r[c] ?? '')}
+                </td>
+              ))}
+              {showActions && (
+                <td className="px-4 py-3 text-right">
+                  <button
+                    onClick={() => onDelete(r.id)}
+                    className="text-sm font-semibold text-red-600 transition hover:text-red-500"
+                  >
+                    Delete
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
-          {rows.length===0 && <tr><td className="px-3 py-6 text-center text-neutral-500 dark:text-neutral-400" colSpan={columns.length + (showActions?1:0)}>No data</td></tr>}
+          {rows.length === 0 && (
+            <tr>
+              <td
+                className="px-4 py-6 text-center text-sm text-slate-500"
+                colSpan={columns.length + (showActions ? 1 : 0)}
+              >
+                No data
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
   );
 }
 
-function RefreshButton({ onClick }) {
+export function RefreshButton({ onClick }) {
   return (
     <button
       onClick={onClick}
       aria-label="Refresh"
-      className="p-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+      className="rounded-full border border-slate-200/60 bg-white/80 p-2 text-slate-500 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-100 hover:text-slate-700"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -404,7 +486,7 @@ function RefreshButton({ onClick }) {
         fill="none"
         stroke="currentColor"
         strokeWidth={1.5}
-        className="w-5 h-5"
+        className="h-5 w-5"
       >
         <path
           strokeLinecap="round"
@@ -434,7 +516,7 @@ function Dashboard({ session, profile, refreshProfile }){
   ];
   const handleSignOut = () => supabase.auth.signOut();
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">
+    <div className="min-h-screen bg-slate-950 text-slate-100">
       <Header
         title={`${firstName}'s Site Reporting`}
         tabs={tabs}
@@ -444,7 +526,7 @@ function Dashboard({ session, profile, refreshProfile }){
         onSignOut={handleSignOut}
       />
 
-      <main className="p-6 grid gap-4 max-w-7xl mx-auto">
+      <main className="mx-auto grid max-w-7xl gap-6 px-6 py-10">
         {tab==='dashboard' && <DashboardTab />}
         {tab==='concrete' && <ConcreteLog isAdmin={isAdmin} />}
         {tab==='manpower' && <ManpowerLog isAdmin={isAdmin} />}
@@ -464,7 +546,7 @@ function Dashboard({ session, profile, refreshProfile }){
   );
 }
 
-function DashboardTab(){
+export function DashboardTab(){
   const { rows: concreteRows } = useTable('concrete');
   const { rows: manpowerRows } = useTable('manpower');
   const { rows: materialRows } = useTable('materials');
@@ -546,33 +628,35 @@ function ConcreteLog({isAdmin}){
   const { rows, insert, remove, clearAll, refresh } = useTable('concrete');
   const newConcrete = () => ({ date: today(), pour_id:'', location:'', element:'', volume:'', mix:'', supplier:'', start_time:'', end_time:'', cubes:'', supervisor:'', notes:'' });
   const [d,setD]=React.useState(newConcrete());
-  const add = async()=>{ if(!d.date||!d.location||!d.element) return alert('Date, Location, Element required'); await insert(d); setD(newConcrete()); };  
+  const add = async()=>{ if(!d.date||!d.location||!d.element) return alert('Date, Location, Element required'); await insert(d); setD(newConcrete()); };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes","created_at"]; download(`concrete_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
-    <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div><Card title="Concrete Log Form"><FormGrid>
-        <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
-        <Input label="Pour ID / Ref" value={d.pour_id} onChange={v=>setD({...d,pour_id:v})} />
-        <Input label="Location / Zone" value={d.location} onChange={v=>setD({...d,location:v})} />
-        <Input label="Element" value={d.element} onChange={v=>setD({...d,element:v})} />
-        <Input label="Volume (m³)" value={d.volume} onChange={v=>setD({...d,volume:v})} />
-        <Input label="Mix / Grade" value={d.mix} onChange={v=>setD({...d,mix:v})} />
-        <Input label="Supplier" value={d.supplier} onChange={v=>setD({...d,supplier:v})} />
-        <Input label="Start Time" type="time" value={d.start_time} onChange={v=>setD({...d,start_time:v})} />
-        <Input label="End Time" type="time" value={d.end_time} onChange={v=>setD({...d,end_time:v})} />
-        <Input label="Cube Samples (qty)" value={d.cubes} onChange={v=>setD({...d,cubes:v})} />
-        <Input label="Supervisor" value={d.supervisor} onChange={v=>setD({...d,supervisor:v})} />
-        <TextArea label="Notes" value={d.notes} onChange={v=>setD({...d,notes:v})} />
-      </FormGrid>
-      <div className="mt-3 flex gap-2 items-center">
-        <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
-        {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
-      </div></Card></div>
-     <div className="md:col-span-2 min-w-0">
+    <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <Card title="Concrete Log Form" className="space-y-4">
+        <FormGrid>
+          <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
+          <Input label="Pour ID / Ref" value={d.pour_id} onChange={v=>setD({...d,pour_id:v})} />
+          <Input label="Location / Zone" value={d.location} onChange={v=>setD({...d,location:v})} />
+          <Input label="Element" value={d.element} onChange={v=>setD({...d,element:v})} />
+          <Input label="Volume (m³)" value={d.volume} onChange={v=>setD({...d,volume:v})} />
+          <Input label="Mix / Grade" value={d.mix} onChange={v=>setD({...d,mix:v})} />
+          <Input label="Supplier" value={d.supplier} onChange={v=>setD({...d,supplier:v})} />
+          <Input label="Start Time" type="time" value={d.start_time} onChange={v=>setD({...d,start_time:v})} />
+          <Input label="End Time" type="time" value={d.end_time} onChange={v=>setD({...d,end_time:v})} />
+          <Input label="Cube Samples (qty)" value={d.cubes} onChange={v=>setD({...d,cubes:v})} />
+          <Input label="Supervisor" value={d.supervisor} onChange={v=>setD({...d,supervisor:v})} />
+          <TextArea label="Notes" value={d.notes} onChange={v=>setD({...d,notes:v})} />
+        </FormGrid>
+        <div className="flex flex-wrap items-center gap-2 pt-2">
+          <button onClick={add} className="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-indigo-500">Add</button>
+          {isAdmin && <button onClick={exportCSV} className="inline-flex items-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Export CSV</button>}
+          {isAdmin && <button onClick={clearAll} className="inline-flex items-center rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50">Clear All</button>}
+        </div>
+      </Card>
+      <div className="md:col-span-2 min-w-0">
         <Card title={`Records (${rows.length})`}>
-          <div className="mb-3 flex justify-end">
-                        <RefreshButton onClick={refresh} />
+          <div className="mb-4 flex justify-end">
+            <RefreshButton onClick={refresh} />
           </div>
           <DataTable columns={["date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
         </Card>
@@ -588,25 +672,27 @@ function ManpowerLog({isAdmin}){
   const add = async()=>{ if(!d.date||!d.contractor||!d.trade) return alert('Date, Contractor, Trade required'); await insert(d); setD(newManpower()); };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","contractor","trade","workers","hours","zone","supervisor","notes","created_at"]; download(`manpower_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
-    <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div><Card title="Add Manpower"><FormGrid>
-        <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
-        <Input label="Contractor" value={d.contractor} onChange={v=>setD({...d,contractor:v})} />
-        <Input label="Trade" value={d.trade} onChange={v=>setD({...d,trade:v})} />
-        <Input label="Workers (count)" value={d.workers} onChange={v=>setD({...d,workers:v})} />
-        <Input label="Hours (per worker)" value={d.hours} onChange={v=>setD({...d,hours:v})} />
-        <Input label="Zone / Area" value={d.zone} onChange={v=>setD({...d,zone:v})} />
-        <Input label="Supervisor" value={d.supervisor} onChange={v=>setD({...d,supervisor:v})} />
-        <TextArea label="Notes" value={d.notes} onChange={v=>setD({...d,notes:v})} />
-      </FormGrid>
-      <div className="mt-3 flex gap-2 items-center">
-        <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
-        {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
-      </div></Card></div>
+    <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <Card title="Add Manpower" className="space-y-4">
+        <FormGrid>
+          <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
+          <Input label="Contractor" value={d.contractor} onChange={v=>setD({...d,contractor:v})} />
+          <Input label="Trade" value={d.trade} onChange={v=>setD({...d,trade:v})} />
+          <Input label="Workers (count)" value={d.workers} onChange={v=>setD({...d,workers:v})} />
+          <Input label="Hours (per worker)" value={d.hours} onChange={v=>setD({...d,hours:v})} />
+          <Input label="Zone / Area" value={d.zone} onChange={v=>setD({...d,zone:v})} />
+          <Input label="Supervisor" value={d.supervisor} onChange={v=>setD({...d,supervisor:v})} />
+          <TextArea label="Notes" value={d.notes} onChange={v=>setD({...d,notes:v})} />
+        </FormGrid>
+        <div className="flex flex-wrap items-center gap-2 pt-2">
+          <button onClick={add} className="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-indigo-500">Add</button>
+          {isAdmin && <button onClick={exportCSV} className="inline-flex items-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Export CSV</button>}
+          {isAdmin && <button onClick={clearAll} className="inline-flex items-center rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50">Clear All</button>}
+        </div>
+      </Card>
       <div className="md:col-span-2 min-w-0">
         <Card title={`Records (${rows.length})`}>
-          <div className="mb-3 flex justify-end">
+          <div className="mb-4 flex justify-end">
             <RefreshButton onClick={refresh} />
           </div>
           <DataTable columns={["date","contractor","trade","workers","hours","zone","supervisor","notes"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
@@ -628,26 +714,36 @@ function IssuesLog({isAdmin}){
   };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","location","description","severity","status","raised_by","owner","due_by","photo_url","created_at"]; download(`issues_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
-    <section className="grid md:grid-cols-3 gap-4">
-      <div><Card title="Add Issue"><FormGrid>
-        <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
-        <Input label="Location / Zone" value={d.location} onChange={v=>setD({...d,location:v})} />
-        <TextArea label="Description" value={d.description} onChange={v=>setD({...d,description:v})} />
-        <Select label="Severity" value={d.severity} onChange={v=>setD({...d,severity:v})} options={["Low","Medium","High","Critical"]} />
-        <Select label="Status" value={d.status} onChange={v=>setD({...d,status:v})} options={["Open","In Progress","Blocked","Closed"]} />
-        <Input label="Raised By" value={d.raised_by} onChange={v=>setD({...d,raised_by:v})} />
-        <Input label="Owner" value={d.owner} onChange={v=>setD({...d,owner:v})} />
-        <Input label="Due By" type="date" value={d.due_by} onChange={v=>setD({...d,due_by:v})} />
-        <label className="text-sm"><div className="text-xs text-neutral-500 mb-1">Photo</div><input type="file" accept="image/*" onChange={e=>setFile(e.target.files?.[0]||null)} /></label>
-      </FormGrid>
-      <div className="mt-3 flex gap-2 items-center">
-        <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
-        {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
-      </div></Card></div>
+    <section className="grid md:grid-cols-3 gap-6">
+      <Card title="Add Issue" className="space-y-4">
+        <FormGrid>
+          <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
+          <Input label="Location / Zone" value={d.location} onChange={v=>setD({...d,location:v})} />
+          <TextArea label="Description" value={d.description} onChange={v=>setD({...d,description:v})} />
+          <Select label="Severity" value={d.severity} onChange={v=>setD({...d,severity:v})} options={["Low","Medium","High","Critical"]} />
+          <Select label="Status" value={d.status} onChange={v=>setD({...d,status:v})} options={["Open","In Progress","Blocked","Closed"]} />
+          <Input label="Raised By" value={d.raised_by} onChange={v=>setD({...d,raised_by:v})} />
+          <Input label="Owner" value={d.owner} onChange={v=>setD({...d,owner:v})} />
+          <Input label="Due By" type="date" value={d.due_by} onChange={v=>setD({...d,due_by:v})} />
+          <label className="text-sm font-medium text-slate-600">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Photo</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={e=>setFile(e.target.files?.[0]||null)}
+              className="w-full cursor-pointer rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm text-slate-600 shadow-inner shadow-white/60 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-indigo-600 hover:file:bg-indigo-100"
+            />
+          </label>
+        </FormGrid>
+        <div className="flex flex-wrap items-center gap-2 pt-2">
+          <button onClick={add} className="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-indigo-500">Add</button>
+          {isAdmin && <button onClick={exportCSV} className="inline-flex items-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Export CSV</button>}
+          {isAdmin && <button onClick={clearAll} className="inline-flex items-center rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50">Clear All</button>}
+        </div>
+      </Card>
       <div className="md:col-span-2 min-w-0">
         <Card title={`Records (${rows.length})`}>
-          <div className="mb-3 flex justify-end">
+          <div className="mb-4 flex justify-end">
             <RefreshButton onClick={refresh} />
           </div>
           <DataTable columns={["date","location","description","severity","status","raised_by","owner","due_by","photo_url"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
@@ -669,29 +765,42 @@ function MaterialsLog({isAdmin}){
   };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url","created_at"]; download(`materials_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
-    <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div><Card title="Add Material Record"><FormGrid>
-        <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
-        <Select label="Type" value={d.type} onChange={v=>setD({...d,type:v})} options={["Request","Delivery"]} />
-        <Input label="Item" value={d.item} onChange={v=>setD({...d,item:v})} />
-        <Input label="Specification" value={d.spec} onChange={v=>setD({...d,spec:v})} />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2"><Input label="Qty" value={d.qty} onChange={v=>setD({...d,qty:v})} /><Input label="Unit" value={d.unit} onChange={v=>setD({...d,unit:v})} /></div>
-        <Input label="Needed By" type="date" value={d.needed_by} onChange={v=>setD({...d,needed_by:v})} />
-        <Input label="Supplier" value={d.supplier} onChange={v=>setD({...d,supplier:v})} />
-        <Input label="PO / Ref" value={d.po} onChange={v=>setD({...d,po:v})} />
-        <Select label="Status" value={d.status} onChange={v=>setD({...d,status:v})} options={["Pending","Approved","Ordered","Delivered","Cancelled"]} />
-        <Input label="Location / Zone" value={d.location} onChange={v=>setD({...d,location:v})} />
-        <Input label="Requester" value={d.requester} onChange={v=>setD({...d,requester:v})} />
-        <label className="text-sm"><div className="text-xs text-neutral-500 mb-1">Delivery / MR Photo</div><input type="file" accept="image/*" onChange={e=>setFile(e.target.files?.[0]||null)} /></label>
-      </FormGrid>
-      <div className="mt-3 flex gap-2 items-center">
-        <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
-        {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
-      </div></Card></div>
+    <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <Card title="Add Material Record" className="space-y-4">
+        <FormGrid>
+          <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
+          <Select label="Type" value={d.type} onChange={v=>setD({...d,type:v})} options={["Request","Delivery"]} />
+          <Input label="Item" value={d.item} onChange={v=>setD({...d,item:v})} />
+          <Input label="Specification" value={d.spec} onChange={v=>setD({...d,spec:v})} />
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Input label="Qty" value={d.qty} onChange={v=>setD({...d,qty:v})} />
+            <Input label="Unit" value={d.unit} onChange={v=>setD({...d,unit:v})} />
+          </div>
+          <Input label="Needed By" type="date" value={d.needed_by} onChange={v=>setD({...d,needed_by:v})} />
+          <Input label="Supplier" value={d.supplier} onChange={v=>setD({...d,supplier:v})} />
+          <Input label="PO / Ref" value={d.po} onChange={v=>setD({...d,po:v})} />
+          <Select label="Status" value={d.status} onChange={v=>setD({...d,status:v})} options={["Pending","Approved","Ordered","Delivered","Cancelled"]} />
+          <Input label="Location / Zone" value={d.location} onChange={v=>setD({...d,location:v})} />
+          <Input label="Requester" value={d.requester} onChange={v=>setD({...d,requester:v})} />
+          <label className="text-sm font-medium text-slate-600">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Delivery / MR Photo</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={e=>setFile(e.target.files?.[0]||null)}
+              className="w-full cursor-pointer rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm text-slate-600 shadow-inner shadow-white/60 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-indigo-600 hover:file:bg-indigo-100"
+            />
+          </label>
+        </FormGrid>
+        <div className="flex flex-wrap items-center gap-2 pt-2">
+          <button onClick={add} className="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-indigo-500">Add</button>
+          {isAdmin && <button onClick={exportCSV} className="inline-flex items-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Export CSV</button>}
+          {isAdmin && <button onClick={clearAll} className="inline-flex items-center rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50">Clear All</button>}
+        </div>
+      </Card>
       <div className="md:col-span-2 min-w-0">
         <Card title={`Records (${rows.length})`}>
-          <div className="mb-3 flex justify-end">
+          <div className="mb-4 flex justify-end">
             <RefreshButton onClick={refresh} />
           </div>
           <DataTable columns={["date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
