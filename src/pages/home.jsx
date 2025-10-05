@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Card from "../components/Card";
 import DataTable from "../components/DataTable";
 import { useTable } from "../hooks/useTable";
+import { usePublicDailyTasks } from "../hooks/usePublicDailyTasks";
 import {
   ResponsiveContainer,
   BarChart,
@@ -20,6 +21,38 @@ import {
 } from "recharts";
 
 const COLORS = ["#111827", "#6b7280", "#2563eb", "#10b981", "#f59e0b", "#ef4444"];
+
+const DAILY_TASK_STATUS_STYLES = {
+  completed:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200",
+  ongoing:
+    "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200",
+  rejected:
+    "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-200",
+};
+
+function formatDateLabel(value) {
+  if (!value) return "";
+  try {
+    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
+      new Date(`${value}T00:00:00`)
+    );
+  } catch (error) {
+    return value;
+  }
+}
+
+function formatDateTimeLabel(value) {
+  if (!value) return "";
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
+  } catch (error) {
+    return value;
+  }
+}
 
 export default function HomePage() {
   const {
@@ -47,6 +80,14 @@ export default function HomePage() {
     loading: bbsLoading,
     error: bbsError,
   } = useTable("bbs_schedule");
+  const {
+    tasks: publicDailyTasks,
+    date: publicDailyTasksDate,
+    loading: publicDailyTasksLoading,
+    error: publicDailyTasksError,
+    refresh: refreshPublicDailyTasks,
+    hasData: hasPublicDailyTasks,
+  } = usePublicDailyTasks();
 
   const concreteData = React.useMemo(() => {
     const byDate = {};
@@ -127,6 +168,28 @@ export default function HomePage() {
       ),
     [upcomingBbsDeliveries]
   );
+  const publicDailyTasksDateLabel = React.useMemo(
+    () => formatDateLabel(publicDailyTasksDate),
+    [publicDailyTasksDate]
+  );
+  const publicDailyTasksSummary = React.useMemo(() => {
+    if (!publicDailyTasks.length) {
+      return "No daily tasks are currently published.";
+    }
+    const preview = publicDailyTasks.slice(0, 6).map((task) => {
+      const status = task.status
+        ? task.status.charAt(0).toUpperCase() + task.status.slice(1)
+        : "Unknown";
+      const updatedAtLabel = formatDateTimeLabel(task.updated_at);
+      const profile = task.updated_by_profile || {};
+      const name = profile.full_name?.trim() || profile.email || "";
+      const updatedInfo = [updatedAtLabel, name ? `by ${name}` : ""]
+        .filter(Boolean)
+        .join(" ");
+      return `${task.title} – ${status}${updatedInfo ? ` (${updatedInfo})` : ""}`;
+    });
+    return preview.join("; ");
+  }, [publicDailyTasks]);
 
   const summarizeSeries = React.useCallback((data, labelKey, valueKey, valueLabel) => {
     if (!data.length) return "No data available.";
@@ -263,6 +326,118 @@ export default function HomePage() {
                 </dd>
               </div>
             </dl>
+          </Card>
+        </section>
+
+        <section className="grid gap-6">
+          <Card
+            title="Daily tasks checklist"
+            subtitle={
+              publicDailyTasksDateLabel
+                ? `Snapshot for ${publicDailyTasksDateLabel}`
+                : "Latest published updates from the field team"
+            }
+            actions={
+              <button
+                type="button"
+                onClick={refreshPublicDailyTasks}
+                disabled={publicDailyTasksLoading}
+                className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-neutral-300/80 bg-white/80 px-3 py-1.5 text-xs font-semibold text-neutral-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-700 dark:border-neutral-700/70 dark:bg-neutral-900/60 dark:text-neutral-200 dark:focus-visible:outline-neutral-300"
+              >
+                Refresh
+              </button>
+            }
+          >
+            <div className="sr-only" id="daily-tasks-summary">
+              {publicDailyTasksSummary}
+            </div>
+            {publicDailyTasksLoading && (
+              <p className="text-sm text-neutral-600 dark:text-neutral-300">Loading daily tasks…</p>
+            )}
+            {!publicDailyTasksLoading && publicDailyTasksError && (
+              <p className="text-sm text-red-600 dark:text-red-300" role="alert">
+                Unable to load daily tasks. {publicDailyTasksError}
+              </p>
+            )}
+            {!publicDailyTasksLoading && !publicDailyTasksError && !hasPublicDailyTasks && (
+              <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                No daily tasks have been published yet. Check back soon.
+              </p>
+            )}
+            {!publicDailyTasksLoading && !publicDailyTasksError && hasPublicDailyTasks && (
+              <div className="overflow-x-auto">
+                <table
+                  className="min-w-full divide-y divide-neutral-200 text-sm dark:divide-neutral-800/80"
+                  aria-describedby="daily-tasks-summary"
+                >
+                  <thead className="bg-neutral-50/80 text-left text-xs font-semibold uppercase tracking-[0.15em] text-neutral-500 dark:bg-neutral-800/60 dark:text-neutral-300">
+                    <tr>
+                      <th scope="col" className="px-4 py-3">
+                        Task
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Status
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Last update
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Remarks
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800/80">
+                    {publicDailyTasks.map((task) => {
+                      const statusLabel = task.status
+                        ? task.status.charAt(0).toUpperCase() + task.status.slice(1)
+                        : "Unknown";
+                      const badgeClasses =
+                        DAILY_TASK_STATUS_STYLES[task.status] ||
+                        "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200";
+                      const updatedAtLabel = formatDateTimeLabel(task.updated_at);
+                      const profile = task.updated_by_profile || {};
+                      const updatedByName =
+                        profile.full_name?.trim() ||
+                        profile.email ||
+                        (task.updated_by ? "Team member" : "");
+                      const remarks = task.remarks?.trim();
+                      return (
+                        <tr key={task.id} className="align-top">
+                          <td className="px-4 py-3 text-neutral-900 dark:text-neutral-50">
+                            <span className="font-semibold">{task.title}</span>
+                            {task.task_date && (
+                              <span className="mt-1 block text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                                {formatDateLabel(task.task_date)}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${badgeClasses}`}
+                            >
+                              {statusLabel}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-neutral-600 dark:text-neutral-300">
+                            {updatedAtLabel || "Not updated yet"}
+                            {updatedByName && (
+                              <span className="block text-xs text-neutral-500 dark:text-neutral-400">by {updatedByName}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-neutral-600 dark:text-neutral-300">
+                            {remarks ? (
+                              remarks
+                            ) : (
+                              <span className="text-neutral-400 dark:text-neutral-500">No remarks provided.</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </Card>
         </section>
 

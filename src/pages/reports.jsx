@@ -28,6 +28,17 @@ const formatRole = (role) =>
         .replace(/_/g, " ")
         .replace(/\b\w/g, (char) => char.toUpperCase())
     : "Role not assigned";
+const formatDateTime = (value) => {
+  if (!value) return "";
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
+  } catch (error) {
+    return value;
+  }
+};
 
 // --------- Session / Profile ---------
 function useSessionProfile(){
@@ -1008,6 +1019,18 @@ function DailyTaskItem({ task, canManageStatus, isAdmin, onStatusChange, onVerif
       return task.task_date;
     }
   }, [task.task_date]);
+  const updatedAtLabel = React.useMemo(() => formatDateTime(task.updated_at), [task.updated_at]);
+  const updatedByName = React.useMemo(() => {
+    const profile = task.updated_by_profile || {};
+    return profile.full_name?.trim() || profile.email || (task.updated_by ? "Team member" : "");
+  }, [task.updated_by, task.updated_by_profile]);
+  const updateMeta = React.useMemo(() => {
+    if (!updatedAtLabel && !updatedByName) return "";
+    const parts = [];
+    if (updatedAtLabel) parts.push(updatedAtLabel);
+    if (updatedByName) parts.push(`by ${updatedByName}`);
+    return `Last updated ${parts.join(" ")}`.trim();
+  }, [updatedAtLabel, updatedByName]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -1040,6 +1063,9 @@ function DailyTaskItem({ task, canManageStatus, isAdmin, onStatusChange, onVerif
                 </span>
               )}
             </div>
+            {updateMeta && (
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">{updateMeta}</p>
+            )}
           </div>
           {!isAdmin && task.remarks && (
             <p className="text-sm text-neutral-600 dark:text-neutral-300">

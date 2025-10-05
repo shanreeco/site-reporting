@@ -16,7 +16,9 @@ export function useDailyTasks(selectedDate) {
       if (!silent) setLoading(true);
       const { data, error: fetchError } = await supabase
         .from("daily_tasks")
-        .select("*")
+        .select(
+          "*, updated_by_profile:profiles!daily_tasks_updated_by_fkey(full_name,email)"
+        )
         .eq("task_date", selectedDate)
         .order("created_at", { ascending: true });
       setTasks(data || []);
@@ -91,6 +93,7 @@ export function useDailyTasks(selectedDate) {
         remarks: null,
         carry_over_from: task.carry_over_from || task.id,
         user_id: task.user_id || null,
+        updated_by: null,
       }));
 
     if (!rowsToInsert.length) return;
@@ -147,6 +150,7 @@ export function useDailyTasks(selectedDate) {
         task_date: selectedDate,
         status: "ongoing",
         user_id: userId,
+        updated_by: userId || null,
       });
       if (insertError) {
         alert(insertError.message);
@@ -156,7 +160,13 @@ export function useDailyTasks(selectedDate) {
   );
 
   const updateTask = useCallback(async (id, changes) => {
-    const payload = { ...changes, updated_at: new Date().toISOString() };
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+    const payload = {
+      ...changes,
+      updated_at: new Date().toISOString(),
+      ...(userId ? { updated_by: userId } : {}),
+    };
     const { error: updateError } = await supabase.from("daily_tasks").update(payload).eq("id", id);
     if (updateError) {
       alert(updateError.message);
