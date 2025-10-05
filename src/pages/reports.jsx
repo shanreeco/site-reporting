@@ -3,6 +3,7 @@ import Header from "../components/Header";
 import Card from "../components/Card";
 import DataTable from "../components/DataTable";
 import { useTable } from "../hooks/useTable";
+import { useDailyTasks, TASK_STATUSES } from "../hooks/useDailyTasks";
 import { supabase, MISCONFIGURED } from "../services/supabase";
 import {
   ResponsiveContainer,
@@ -20,6 +21,24 @@ import {
   Legend,
 } from "recharts";
 const today = () => new Date().toISOString().slice(0, 10);
+const formatRole = (role) =>
+  role
+    ? role
+        .toString()
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase())
+    : "Role not assigned";
+const formatDateTime = (value) => {
+  if (!value) return "";
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
+  } catch (error) {
+    return value;
+  }
+};
 
 // --------- Session / Profile ---------
 function useSessionProfile(){
@@ -532,15 +551,18 @@ function RefreshButton({ onClick }) {
 // ========= Dashboard =========
 function Dashboard({ session, profile, refreshProfile }){
   const isAdmin = profile?.role === 'admin';
+  const isSupervisor = profile?.role === 'supervisor';
   const [tab, setTab] = React.useState('dashboard');
   const [showProfile, setShowProfile] = React.useState(false);
   const firstName = profile.full_name?.split(' ')[0] || 'User';
   const avatarInitial = firstName?.[0]?.toUpperCase() || 'U';
+  const roleLabel = formatRole(profile?.role);
   React.useEffect(() => {
     document.title = `${firstName}'s Site Reporting`;
   }, [firstName]);
   const tabs = [
     { value: 'dashboard', label: 'Dashboard' },
+    { value: 'tasks', label: 'Daily tasks' },
     { value: 'concrete', label: 'Concrete' },
     { value: 'manpower', label: 'Manpower' },
     { value: 'issues', label: 'Issues' },
@@ -560,10 +582,17 @@ function Dashboard({ session, profile, refreshProfile }){
         onEditProfile={() => setShowProfile(true)}
         onSignOut={handleSignOut}
         avatarInitial={avatarInitial}
+        roleLabel={roleLabel}
       />
 
       <main className="relative mx-auto grid max-w-7xl gap-6 px-6 pb-16 pt-10">
         {tab==='dashboard' && <DashboardTab />}
+        {tab==='tasks' && (
+          <DailyTasksLog
+            isAdmin={isAdmin}
+            isSupervisor={isSupervisor}
+          />
+        )}
         {tab==='concrete' && <ConcreteLog isAdmin={isAdmin} />}
         {tab==='manpower' && <ManpowerLog isAdmin={isAdmin} />}
         {tab==='issues' && <IssuesLog isAdmin={isAdmin} />}
@@ -821,6 +850,301 @@ function DashboardTab(){
         </div>
       )}
     </section>
+  );
+}
+
+function DailyTasksLog({ isAdmin, isSupervisor }){
+  const defaultDate = React.useMemo(() => today(), []);
+  const [selectedDate, setSelectedDate] = React.useState(defaultDate);
+  const [newTaskTitle, setNewTaskTitle] = React.useState("");
+  const { tasks, loading, error, refresh, addTask, updateTask, verifyTask, deleteTask } = useDailyTasks(selectedDate);
+  const canManageStatus = isAdmin || isSupervisor;
+  const readableDate = React.useMemo(() => {
+    try {
+      return new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(
+        new Date(`${selectedDate}T00:00:00`)
+      );
+    } catch (e) {
+      return selectedDate;
+    }
+  }, [selectedDate]);
+
+  const handleAddTask = async (event) => {
+    event.preventDefault();
+    if (!newTaskTitle.trim()) return;
+    await addTask(newTaskTitle);
+    setNewTaskTitle("");
+  };
+
+  const handleStatusChange = async (task, nextStatus) => {
+    if (task.status === nextStatus) return;
+    const patch = { status: nextStatus };
+    if (nextStatus !== "completed") {
+      patch.verified = false;
+      patch.verified_by = null;
+      patch.verified_at = null;
+    }
+    await updateTask(task.id, patch);
+  };
+
+  const handleVerify = async (task, shouldVerify) => {
+    await verifyTask(task.id, shouldVerify);
+  };
+
+  const handleDelete = async (taskId) => {
+    if (!isAdmin) return;
+    if (!window.confirm("Delete this task?")) return;
+    await deleteTask(taskId);
+  };
+
+  const handleSaveRemark = async (taskId, remark) => {
+    await updateTask(taskId, { remarks: remark ? remark : null });
+  };
+
+  return (
+    <section className="grid gap-4">
+      <Card
+        title="Manage daily tasks"
+        subtitle="Assign tasks for the team and let supervisors update progress through the day."
+      >
+        <form
+          onSubmit={handleAddTask}
+          className="flex flex-col gap-4 rounded-2xl bg-white/40 p-4 text-sm shadow-sm ring-1 ring-white/40 backdrop-blur dark:bg-neutral-900/40 dark:ring-neutral-700/50 sm:flex-row sm:items-end"
+        >
+          <label className="flex flex-1 flex-col gap-1 text-sm">
+            <span className="text-xs font-medium uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+              Working date
+            </span>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(event) => setSelectedDate(event.target.value)}
+              className="w-full rounded-xl border border-neutral-200/70 bg-white/90 px-3 py-2 text-neutral-900 shadow-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-900/10 dark:border-neutral-700/70 dark:bg-neutral-900/70 dark:text-neutral-100 dark:focus:border-neutral-400 dark:focus:ring-neutral-100/20"
+            />
+          </label>
+          {canManageStatus && (
+            <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
+              <label className="flex-1 text-sm">
+                <span className="text-xs font-medium uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+                  New task
+                </span>
+                <input
+                  type="text"
+                  value={newTaskTitle}
+                  onChange={(event) => setNewTaskTitle(event.target.value)}
+                  placeholder="e.g. Morning toolbox briefing"
+                  className="mt-1 w-full rounded-xl border border-neutral-200/70 bg-white/90 px-3 py-2 text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-900/10 dark:border-neutral-700/70 dark:bg-neutral-900/70 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-neutral-400 dark:focus:ring-neutral-100/20"
+                />
+              </label>
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white dark:bg-neutral-100 dark:text-neutral-900 dark:focus-visible:outline-neutral-300"
+                disabled={!newTaskTitle.trim()}
+              >
+                Add task
+              </button>
+            </div>
+          )}
+        </form>
+        <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
+          Tasks marked ongoing or rejected are automatically carried forward to the next working day. Supervisors can update
+          progress while admins can finalise remarks and verifications.
+        </p>
+      </Card>
+
+      <Card
+        title={`Tasks for ${readableDate}`}
+        actions={
+          <div className="ml-auto flex items-center gap-2">
+            <RefreshButton onClick={() => refresh()} />
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+              {canManageStatus ? "Supervisors and admins can update status" : "Read-only access"}
+            </span>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          {error && (
+            <p className="rounded-2xl bg-red-50/80 px-4 py-3 text-sm font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300" role="alert">
+              {error}
+            </p>
+          )}
+          {loading && (
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">Loading tasks…</p>
+          )}
+          {!loading && !tasks.length && !error && (
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">
+              No tasks recorded for this date yet. {canManageStatus ? "Add the first task to start the checklist." : "Ask an administrator to create the checklist."}
+            </p>
+          )}
+          {!loading && tasks.length > 0 && (
+            <div className="grid gap-3">
+              {tasks.map((task) => (
+                <DailyTaskItem
+                  key={task.id}
+                  task={task}
+                  canManageStatus={canManageStatus}
+                  isAdmin={isAdmin}
+                  onStatusChange={handleStatusChange}
+                  onVerify={handleVerify}
+                  onDelete={handleDelete}
+                  onSaveRemark={handleSaveRemark}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </Card>
+    </section>
+  );
+}
+
+function DailyTaskItem({ task, canManageStatus, isAdmin, onStatusChange, onVerify, onDelete, onSaveRemark }){
+  const [remark, setRemark] = React.useState(task.remarks || "");
+  const [saving, setSaving] = React.useState(false);
+  const [dirty, setDirty] = React.useState(false);
+
+  React.useEffect(() => {
+    setRemark(task.remarks || "");
+    setDirty(false);
+  }, [task.id, task.remarks]);
+
+  const statusLabel = task.status ? task.status.charAt(0).toUpperCase() + task.status.slice(1) : "";
+  const taskDateLabel = React.useMemo(() => {
+    try {
+      return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
+        new Date(`${task.task_date}T00:00:00`)
+      );
+    } catch (error) {
+      return task.task_date;
+    }
+  }, [task.task_date]);
+  const updatedAtLabel = React.useMemo(() => formatDateTime(task.updated_at), [task.updated_at]);
+  const updatedByName = React.useMemo(() => {
+    const profile = task.updated_by_profile || {};
+    return profile.full_name?.trim() || profile.email || (task.updated_by ? "Team member" : "");
+  }, [task.updated_by, task.updated_by_profile]);
+  const updateMeta = React.useMemo(() => {
+    if (!updatedAtLabel && !updatedByName) return "";
+    const parts = [];
+    if (updatedAtLabel) parts.push(updatedAtLabel);
+    if (updatedByName) parts.push(`by ${updatedByName}`);
+    return `Last updated ${parts.join(" ")}`.trim();
+  }, [updatedAtLabel, updatedByName]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    await onSaveRemark(task.id, remark.trim());
+    setSaving(false);
+    setDirty(false);
+  };
+
+  const disableVerify = task.status !== "completed";
+
+  return (
+    <div className="rounded-3xl border border-neutral-200/70 bg-white/85 p-5 shadow-sm transition dark:border-neutral-700/70 dark:bg-neutral-900/70">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-2">
+          <div>
+            <p className="text-base font-semibold text-neutral-900 dark:text-neutral-50">{task.title}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+              <span>{taskDateLabel}</span>
+              <span className="inline-flex items-center rounded-full bg-neutral-100 px-2 py-0.5 text-[0.7rem] font-medium uppercase tracking-wide text-neutral-600 dark:bg-neutral-800 dark:text-neutral-200">
+                {statusLabel}
+              </span>
+              {task.carry_over_from && (
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[0.7rem] font-medium uppercase tracking-wide text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
+                  Carried over
+                </span>
+              )}
+              {task.verified && (
+                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[0.7rem] font-medium uppercase tracking-wide text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
+                  Verified
+                </span>
+              )}
+            </div>
+            {updateMeta && (
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">{updateMeta}</p>
+            )}
+          </div>
+          {!isAdmin && task.remarks && (
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">
+              <span className="font-semibold">Remarks:</span> {task.remarks}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-col items-stretch gap-2 sm:items-end">
+          {canManageStatus ? (
+            <label className="text-xs font-medium uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+              Status
+              <select
+                value={task.status}
+                onChange={(event) => onStatusChange(task, event.target.value)}
+                className="mt-1 w-40 rounded-xl border border-neutral-200/70 bg-white/90 px-3 py-2 text-sm text-neutral-900 shadow-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-900/10 dark:border-neutral-700/70 dark:bg-neutral-900/70 dark:text-neutral-100 dark:focus:border-neutral-400 dark:focus:ring-neutral-100/20"
+              >
+                {TASK_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <p className="text-xs font-medium uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+              Status: {statusLabel}
+            </p>
+          )}
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => onVerify(task, !task.verified)}
+              disabled={disableVerify && !task.verified}
+              className="inline-flex items-center justify-center rounded-full border border-neutral-300/80 bg-white/80 px-4 py-1.5 text-xs font-semibold text-neutral-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-600 dark:border-neutral-700/70 dark:bg-neutral-900/60 dark:text-neutral-200 dark:focus-visible:outline-neutral-300"
+            >
+              {task.verified ? "Remove verification" : "Verify task"}
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => onDelete(task.id)}
+              className="text-xs font-semibold text-red-600 underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500/70 dark:text-red-300"
+            >
+              Delete
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isAdmin && (
+        <div className="mt-4">
+          <label className="text-xs font-medium uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+            Remarks
+            <textarea
+              value={remark}
+              onChange={(event) => {
+                setRemark(event.target.value);
+                setDirty(true);
+              }}
+              rows={3}
+              placeholder="Explain why a task was delayed or rejected"
+              className="mt-1 w-full rounded-xl border border-neutral-200/70 bg-white/90 px-3 py-2 text-sm text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-900/10 dark:border-neutral-700/70 dark:bg-neutral-900/70 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-neutral-400 dark:focus:ring-neutral-100/20"
+            />
+          </label>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || !dirty}
+              className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white dark:bg-neutral-100 dark:text-neutral-900 dark:focus-visible:outline-neutral-300"
+            >
+              {saving ? "Saving…" : "Save remark"}
+            </button>
+            {dirty && <span className="text-neutral-500 dark:text-neutral-300">Unsaved changes</span>}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
