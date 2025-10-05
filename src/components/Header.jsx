@@ -1,8 +1,10 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 export default function Header({
   title,
   subtitle,
+  roleLabel,
   tabs,
   activeTab,
   onTabChange,
@@ -23,6 +25,9 @@ export default function Header({
           <div>
             {subtitle && <p className="text-xs uppercase tracking-[0.2em] text-neutral-400">{subtitle}</p>}
             <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">{title}</h1>
+            {roleLabel && (
+              <p className="text-xs font-medium text-neutral-500 dark:text-neutral-300">{roleLabel}</p>
+            )}
           </div>
           <div className="ml-auto flex items-center gap-3">
             <button
@@ -33,6 +38,12 @@ export default function Header({
             >
               {avatarInitial || <span className="sr-only">Open profile</span>}
             </button>
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300/80 bg-white/85 px-4 py-2 text-sm font-semibold text-neutral-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-600 dark:border-neutral-700/80 dark:bg-neutral-900/70 dark:text-neutral-100 dark:focus-visible:outline-neutral-300"
+            >
+              View public site
+            </Link>
             <button
               type="button"
               onClick={onSignOut}
