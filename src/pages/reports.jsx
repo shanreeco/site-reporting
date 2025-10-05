@@ -545,6 +545,7 @@ function Dashboard({ session, profile, refreshProfile }){
     { value: 'manpower', label: 'Manpower' },
     { value: 'issues', label: 'Issues' },
     { value: 'materials', label: 'Materials' },
+    { value: 'bbs', label: 'BBS schedule' },
   ];
   const handleSignOut = () => supabase.auth.signOut();
   return (
@@ -567,6 +568,7 @@ function Dashboard({ session, profile, refreshProfile }){
         {tab==='manpower' && <ManpowerLog isAdmin={isAdmin} />}
         {tab==='issues' && <IssuesLog isAdmin={isAdmin} />}
         {tab==='materials' && <MaterialsLog isAdmin={isAdmin} />}
+        {tab==='bbs' && <BbsScheduleLog isAdmin={isAdmin} />}
       </main>
       
       {showProfile && (
@@ -586,6 +588,7 @@ function DashboardTab(){
   const { rows: manpowerRows, loading: manpowerLoading, error: manpowerError } = useTable('manpower');
   const { rows: materialRows, loading: materialLoading, error: materialError } = useTable('materials');
   const { rows: issueRows, loading: issuesLoading, error: issuesError } = useTable('issues');
+  const { rows: bbsRows, loading: bbsLoading, error: bbsError } = useTable('bbs_schedule');
 
   const concreteData = React.useMemo(()=>{
     const byDate = {};
@@ -616,6 +619,16 @@ function DashboardTab(){
     return Object.entries(byStatus).map(([name, value])=>({ name, value }));
   },[materialRows]);
 
+  const bbsDeliveryData = React.useMemo(()=>{
+    const byDate = {};
+    for(const r of bbsRows){
+      const d = r.delivery_date || '';
+      const w = parseFloat(r.weight_tons) || 0;
+      byDate[d] = (byDate[d]||0) + w;
+    }
+    return Object.entries(byDate).map(([date, weight])=>({ date, weight }));
+  },[bbsRows]);
+
   const COLORS = ['#4c51bf', '#0f766e', '#f59e0b', '#db2777', '#7c3aed'];
 
   const summarizeSeries = React.useCallback((data, labelKey, valueKey, unitLabel) => {
@@ -637,7 +650,8 @@ function DashboardTab(){
   const concreteSummary = summarizeSeries(concreteData, 'date', 'volume', 'm³');
   const manpowerSummary = summarizeSeries(manpowerData, 'date', 'workers', 'workers');
   const materialSummary = summarizePie(materialData);
-  const heroLoading = concreteLoading || manpowerLoading || issuesLoading || materialLoading;
+  const bbsDeliverySummary = summarizeSeries(bbsDeliveryData, 'date', 'weight', 't');
+  const heroLoading = concreteLoading || manpowerLoading || issuesLoading || materialLoading || bbsLoading;
 
   const totalConcreteVolume = React.useMemo(
     () => concreteRows.reduce((sum, row) => sum + (parseFloat(row.volume) || 0), 0),
@@ -658,10 +672,30 @@ function DashboardTab(){
     }).length,
     [materialRows]
   );
+  const totalBbsWeight = React.useMemo(
+    () => bbsRows.reduce((sum, row) => sum + (parseFloat(row.weight_tons) || 0), 0),
+    [bbsRows]
+  );
+  const upcomingBbsDeliveries = React.useMemo(()=>{
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    return bbsRows.filter(row => {
+      const value = row.delivery_date;
+      if(!value) return false;
+      const date = new Date(value);
+      if(Number.isNaN(date.getTime())) return false;
+      return date >= today;
+    });
+  },[bbsRows]);
+  const upcomingBbsCount = upcomingBbsDeliveries.length;
+  const upcomingBbsWeight = React.useMemo(
+    () => upcomingBbsDeliveries.reduce((sum, row) => sum + (parseFloat(row.weight_tons) || 0), 0),
+    [upcomingBbsDeliveries]
+  );
 
   return (
     <section className="grid gap-4">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card title="Concrete poured" subtitle="Total volume logged" className="!p-5">
           <p className="text-3xl font-semibold tracking-tight" aria-live="polite">
             {heroLoading ? 'Loading…' : `${totalConcreteVolume.toLocaleString(undefined,{ minimumFractionDigits:1, maximumFractionDigits:1 })} m³`}
@@ -686,8 +720,14 @@ function DashboardTab(){
           </p>
           <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">{materialRows.length} records overall</p>
         </Card>
+        <Card title="BBS deliveries scheduled" subtitle="Tonnage remaining" className="!p-5">
+          <p className="text-3xl font-semibold tracking-tight" aria-live="polite">
+            {heroLoading ? 'Loading…' : `${totalBbsWeight.toLocaleString(undefined,{ minimumFractionDigits:1, maximumFractionDigits:1 })} t`}
+          </p>
+          <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">{upcomingBbsCount} upcoming / {upcomingBbsWeight.toLocaleString(undefined,{ minimumFractionDigits:1, maximumFractionDigits:1 })} t scheduled</p>
+        </Card>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card title="Concrete volume" subtitle="Daily pour totals">
           <div className="sr-only" id="dashboard-concrete-summary">
             {concreteSummary}
@@ -705,6 +745,26 @@ function DashboardTab(){
               <YAxis />
               <Tooltip cursor={{ fill: 'transparent' }} />
               <Bar dataKey="volume" fill={COLORS[0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+        <Card title="BBS deliveries" subtitle="Scheduled tonnage by date">
+          <div className="sr-only" id="dashboard-bbs-summary">
+            {bbsDeliverySummary}
+          </div>
+          <ResponsiveContainer
+            width="100%"
+            height={250}
+            role="img"
+            aria-label="Bar chart showing BBS deliveries by date"
+            aria-describedby="dashboard-bbs-summary"
+          >
+            <BarChart data={bbsDeliveryData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip cursor={{ fill: 'transparent' }} />
+              <Bar dataKey="weight" fill={COLORS[4]} />
             </BarChart>
           </ResponsiveContainer>
         </Card>
@@ -751,12 +811,13 @@ function DashboardTab(){
           </ResponsiveContainer>
         </Card>
       </div>
-      {(concreteError || manpowerError || issuesError || materialError) && (
+      {(concreteError || manpowerError || issuesError || materialError || bbsError) && (
         <div className="rounded-2xl border border-red-300/80 bg-red-50/80 p-4 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300" role="alert">
           {concreteError && <p>Concrete data error: {concreteError}</p>}
           {manpowerError && <p>Manpower data error: {manpowerError}</p>}
           {issuesError && <p>Issues data error: {issuesError}</p>}
           {materialError && <p>Materials data error: {materialError}</p>}
+          {bbsError && <p>BBS schedule data error: {bbsError}</p>}
         </div>
       )}
     </section>
@@ -1031,6 +1092,93 @@ function MaterialsLog({isAdmin}){
           <DataTable
             caption="Material records"
             columns={["date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url"]}
+            rows={rows}
+            onDelete={isAdmin ? remove : undefined}
+            loading={loading}
+            error={error}
+          />
+        </Card>
+      </div>
+    </section>
+  );
+}
+
+function BbsScheduleLog({isAdmin}){
+  const { rows, insert, remove, clearAll, refresh, loading, error } = useTable('bbs_schedule');
+  const newBbs = () => ({
+    delivery_date: today(),
+    element: '',
+    bar_mark: '',
+    diameter_mm: '',
+    length_m: '',
+    weight_tons: '',
+    supplier: '',
+    status: 'Planned',
+    remarks: '',
+  });
+  const [d, setD] = React.useState(newBbs());
+  const add = async () => {
+    if (!d.delivery_date || !d.element || !d.bar_mark) {
+      alert('Delivery date, Element and Bar Mark are required');
+      return;
+    }
+    await insert(d);
+    setD(newBbs());
+  };
+  const exportCSV = () => {
+    if (!isAdmin) return;
+    const headers = ['id','user_id','delivery_date','element','bar_mark','diameter_mm','length_m','weight_tons','supplier','status','remarks','created_at'];
+    download(`bbs_schedule_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers));
+  };
+  return (
+    <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div>
+        <Card title="Plan BBS Deliveries" subtitle="Coordinate reinforcement drops with the site team.">
+          <FormGrid>
+            <Input label="Delivery date" type="date" value={d.delivery_date} onChange={v=>setD({...d,delivery_date:v})} />
+            <Input label="Element / location" value={d.element} onChange={v=>setD({...d,element:v})} />
+            <Input label="Bar mark" value={d.bar_mark} onChange={v=>setD({...d,bar_mark:v})} />
+            <Input label="Diameter (mm)" value={d.diameter_mm} onChange={v=>setD({...d,diameter_mm:v})} />
+            <Input label="Cut length (m)" value={d.length_m} onChange={v=>setD({...d,length_m:v})} />
+            <Input label="Weight (t)" value={d.weight_tons} onChange={v=>setD({...d,weight_tons:v})} />
+            <Input label="Supplier / fabricator" value={d.supplier} onChange={v=>setD({...d,supplier:v})} />
+            <Select label="Status" value={d.status} onChange={v=>setD({...d,status:v})} options={["Planned","Confirmed","Delivered","Delayed","Cancelled"]} />
+            <TextArea label="Remarks" value={d.remarks} onChange={v=>setD({...d,remarks:v})} />
+          </FormGrid>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={add}
+              className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white dark:bg-neutral-100 dark:text-neutral-900 dark:focus-visible:outline-neutral-300"
+            >
+              Add delivery
+            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={exportCSV}
+                className="inline-flex items-center justify-center rounded-xl border border-neutral-300/80 bg-white/80 px-4 py-2 text-sm font-semibold text-neutral-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-600 dark:border-neutral-700/80 dark:bg-neutral-900/70 dark:text-neutral-200 dark:focus-visible:outline-neutral-300"
+              >
+                Export CSV
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={clearAll}
+                className="inline-flex items-center justify-center rounded-xl border border-red-300/80 bg-red-50/80 px-4 py-2 text-sm font-semibold text-red-600 transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500/70 dark:border-red-500/50 dark:bg-red-500/10 dark:text-red-300"
+              >
+                Clear all
+              </button>
+            )}
+          </div>
+        </Card>
+      </div>
+      <div className="min-w-0 md:col-span-2">
+        <Card title={`Schedule (${rows.length})`} actions={<div className="ml-auto"><RefreshButton onClick={refresh} /></div>}>
+          <DataTable
+            caption="BBS delivery schedule"
+            columns={["delivery_date","element","bar_mark","diameter_mm","length_m","weight_tons","supplier","status","remarks"]}
             rows={rows}
             onDelete={isAdmin ? remove : undefined}
             loading={loading}
