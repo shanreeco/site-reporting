@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import Header from "../components/Header";
+import Card from "../components/Card";
+import DataTable from "../components/DataTable";
+import { useTable } from "../hooks/useTable";
 import { supabase, MISCONFIGURED } from "../services/supabase";
 import {
   ResponsiveContainer,
@@ -67,11 +70,16 @@ function AuthPage(){
   const [signup,setSignup] = useState(false);
   const [msg,setMsg] = useState("");
   const [showPass, setShowPass] = useState(false);
-  
+  const [processing, setProcessing] = useState(false);
+  const emailId = React.useId();
+  const passwordId = React.useId();
+  const messageId = React.useId();
+
   const handleAuth = async()=>{
     setMsg("");
     if (!email || !password) { setMsg('Email and password are required.'); return; }
     try {
+      setProcessing(true);
       if (signup) {
         const { error } = await supabase.auth.signUp({ email, password, options:{ emailRedirectTo: window.location.origin } });
         setMsg(error ? error.message : 'Check your email to confirm sign-up.');
@@ -80,52 +88,107 @@ function AuthPage(){
         setMsg(error ? error.message : '');
       }
     } catch(e){ setMsg(e.message || String(e)); }
+    finally { setProcessing(false); }
+  };
+
+  const onSubmit = async (event) => {
+    event.preventDefault();
+    await handleAuth();
   };
 
   return (
-    <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 px-4">
-      <div className="w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
-        <h1 className="text-lg font-semibold mb-2">{signup ? 'Create account' : 'Sign in'}</h1>
-        {MISCONFIGURED && (
-          <div className="mb-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
-            Supabase keys are not set. In Vercel add <code>VITE_SUPABASE_URL</code> & <code>VITE_SUPABASE_ANON_KEY</code>.
-          </div>
-        )}
-        <input type="email" placeholder="name@company.com" value={email}
-               onChange={e=>setEmail(e.target.value)}
-               className="w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 mb-2 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400" />
-        <div className="relative mb-3">
-          <input type={showPass ? 'text' : 'password'} placeholder="Password" value={password}
-                 onChange={e=>setPassword(e.target.value)}
-                 className="w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 pr-10 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400" />
-          <button type="button" aria-label="Show password"
-                  onMouseDown={()=>setShowPass(true)}
-                  onMouseUp={()=>setShowPass(false)}
-                  onMouseLeave={()=>setShowPass(false)}
-                  onTouchStart={()=>setShowPass(true)}
-                  onTouchEnd={()=>setShowPass(false)}
-                  className="absolute inset-y-0 right-3 flex items-center text-neutral-500">
-            {showPass ? (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 01 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 01-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-              </svg>
-            )}
-          </button>
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-neutral-100 via-white to-neutral-200 px-6 py-12 text-neutral-900 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 dark:text-neutral-100">
+      <div className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-neutral-200/60 blur-3xl dark:bg-neutral-800/60" aria-hidden="true" />
+      <div className="pointer-events-none absolute -right-32 bottom-10 h-[28rem] w-[28rem] rounded-full bg-neutral-300/50 blur-3xl dark:bg-neutral-700/50" aria-hidden="true" />
+      <div className="relative mx-auto w-full max-w-md">
+        <div className="mb-10 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-neutral-500 dark:text-neutral-400">Site reporting workspace</p>
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight">{signup ? 'Create an account' : 'Welcome back'}</h1>
+          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">Use your company credentials to access real-time site insights.</p>
         </div>
-        <button onClick={handleAuth}
-                className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white">
-          {signup ? 'Sign up' : 'Sign in'}
-        </button>
-        <p className="text-xs text-neutral-500 mt-3">
-          {signup ? 'Have an account? ' : 'No account? '}
-          <button className="underline" onClick={()=>{ setSignup(!signup); setMsg(''); }}> {signup ? 'Sign in' : 'Create one'} </button>
-        </p>
-        {msg && <p className="text-xs text-red-600 mt-2">{msg}</p>}
+        <form onSubmit={onSubmit} className="rounded-3xl border border-white/70 bg-white/80 p-8 shadow-xl backdrop-blur dark:border-neutral-800/80 dark:bg-neutral-900/80" noValidate>
+          {MISCONFIGURED && (
+            <div className="mb-4 rounded-2xl border border-amber-200/80 bg-amber-50/90 p-3 text-xs font-medium text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200" role="status" aria-live="polite">
+              Supabase keys are not set. In Vercel add <code>VITE_SUPABASE_URL</code> & <code>VITE_SUPABASE_ANON_KEY</code>.
+            </div>
+          )}
+          <div className="space-y-3">
+            <label className="text-sm" htmlFor={emailId}>
+              <span className="mb-1 block text-xs font-medium uppercase tracking-widest text-neutral-500">Email</span>
+              <input
+                id={emailId}
+                type="email"
+                placeholder="name@company.com"
+                autoComplete="email"
+                value={email}
+                onChange={e=>setEmail(e.target.value)}
+                aria-describedby={msg ? messageId : undefined}
+                aria-invalid={msg && !email ? "true" : undefined}
+                className="w-full rounded-xl border border-neutral-200/80 bg-white/90 px-3 py-2 text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-900/10 dark:border-neutral-700/80 dark:bg-neutral-900/70 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-neutral-400 dark:focus:ring-neutral-100/20"
+              />
+            </label>
+            <label className="text-sm" htmlFor={passwordId}>
+              <span className="mb-1 block text-xs font-medium uppercase tracking-widest text-neutral-500">Password</span>
+              <div className="relative">
+                <input
+                  id={passwordId}
+                  type={showPass ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  autoComplete={signup ? "new-password" : "current-password"}
+                  value={password}
+                  onChange={e=>setPassword(e.target.value)}
+                  aria-describedby={msg ? messageId : undefined}
+                  aria-invalid={msg && !password ? "true" : undefined}
+                  className="w-full rounded-xl border border-neutral-200/80 bg-white/90 px-3 py-2 pr-12 text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-900/10 dark:border-neutral-700/80 dark:bg-neutral-900/70 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-neutral-400 dark:focus:ring-neutral-100/20"
+                />
+                <button
+                  type="button"
+                  aria-pressed={showPass}
+                  onClick={() => setShowPass((prev) => !prev)}
+                  className="absolute inset-y-0 right-2 flex h-full items-center rounded-full px-2 text-neutral-500 transition hover:text-neutral-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus-visible:outline-neutral-300"
+                >
+                  <span className="sr-only">{showPass ? 'Hide password' : 'Show password'}</span>
+                  {showPass ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="h-5 w-5" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.512 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="h-5 w-5" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 01-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.243L9.88 9.88" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </label>
+          </div>
+          {msg && (
+            <p
+              id={messageId}
+              className="mt-3 rounded-xl bg-red-50/80 px-3 py-2 text-xs font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300"
+              role="alert"
+            >
+              {msg}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={processing}
+            className="mt-4 w-full rounded-2xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-900/10 transition hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white dark:bg-neutral-100 dark:text-neutral-900 dark:focus-visible:outline-neutral-300"
+          >
+            {processing ? 'Submitting…' : signup ? 'Sign up' : 'Sign in'}
+          </button>
+          <p className="mt-4 text-center text-xs text-neutral-600 dark:text-neutral-400">
+            {signup ? 'Have an account? ' : 'No account yet? '}
+            <button
+              type="button"
+              className="font-semibold text-neutral-900 underline decoration-neutral-400 decoration-dotted underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-700 dark:text-neutral-100 dark:focus-visible:outline-neutral-200"
+              onClick={()=>{ setSignup(!signup); setMsg(''); }}
+            >
+              {signup ? 'Sign in' : 'Create one'}
+            </button>
+          </p>
+        </form>
       </div>
     </div>
   );
@@ -170,14 +233,17 @@ function ProfileSetup({ session, profile, refreshProfile }){
   };
 
   return (
-    <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 px-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
-        <h1 className="text-lg font-semibold mb-4">Complete your profile</h1>
-        <div className="grid gap-2 mb-3">
-          <div>
-            <Input label="Full Name" value={fullName} onChange={setFullName} />
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-neutral-100 via-white to-neutral-200 px-6 py-12 text-neutral-900 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 dark:text-neutral-100">
+      <div className="pointer-events-none absolute inset-x-0 top-10 mx-auto h-72 w-[28rem] rounded-full bg-neutral-200/60 blur-3xl dark:bg-neutral-800/50" aria-hidden="true" />
+      <div className="relative mx-auto w-full max-w-lg">
+        <form onSubmit={handleSubmit} className="rounded-3xl border border-white/70 bg-white/85 p-8 shadow-xl backdrop-blur dark:border-neutral-800/80 dark:bg-neutral-900/80">
+          <div className="mb-6 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-neutral-500 dark:text-neutral-400">Complete your profile</p>
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight">Tell us about you</h1>
+            <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">We use this information to personalise your dashboard and reports.</p>
           </div>
-          <div>
+          <div className="grid gap-3">
+            <Input label="Full Name" value={fullName} onChange={setFullName} autoComplete="name" />
             <Input
               label="IC Last 4"
               value={icLast4}
@@ -185,20 +251,24 @@ function ProfileSetup({ session, profile, refreshProfile }){
               inputMode="text"
               pattern="\d{3}[A-Za-z]"
               maxLength={4}
-              className={icErr ? 'border-red-500 dark:border-red-700' : ''}
+              helpText="Format: three digits followed by one letter."
+              errorMessage={icErr}
             />
-            {icErr && <p className="text-xs text-red-600 mt-1">{icErr}</p>}
           </div>
-        </div>
-        {msg && <p className="text-xs text-red-600 mb-2">{msg}</p>}
-        <button
-          type="submit"
-          disabled={!!icErr || icLast4.length !== 4 || !fullName.trim()}
-          className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white disabled:opacity-50"
-        >
-          Save
-        </button>
-      </form>
+          {msg && (
+            <p className="mt-4 rounded-xl bg-red-50/80 px-3 py-2 text-xs font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300" role="alert">
+              {msg}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={!!icErr || icLast4.length !== 4 || !fullName.trim()}
+            className="mt-6 w-full rounded-2xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-900/10 transition hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white dark:bg-neutral-100 dark:text-neutral-900 dark:focus-visible:outline-neutral-300"
+          >
+            Save profile
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
@@ -242,47 +312,59 @@ function ProfileEditor({ session, profile, refreshProfile, onClose }){
     }
   };
 
+  const headingId = React.useId();
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/60 backdrop-blur-sm px-4 py-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={headingId}
+    >
       <form
         onSubmit={handleSubmit}
-        className="relative w-full max-w-sm bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm"
+        className="relative w-full max-w-md rounded-3xl border border-white/70 bg-white/90 p-8 shadow-2xl backdrop-blur dark:border-neutral-800/80 dark:bg-neutral-900/85"
       >
         <button
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-2 right-2 p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-700 rounded"
+          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200/70 text-neutral-500 transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-600 dark:border-neutral-700/70 dark:text-neutral-300 dark:focus-visible:outline-neutral-300"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        <h2 className="text-lg font-semibold mb-4">Edit profile</h2>
-        <div className="grid gap-2 mb-3">
-          <div>
-            <Input label="Full Name" value={fullName} onChange={setFullName} />
-          </div>
-          <div>
-            <Input
-              label="IC Last 4"
-              value={icLast4}
-              onChange={handleIcChange}
-              inputMode="text"
-              pattern="\d{3}[A-Za-z]"
-              maxLength={4}
-              className={icErr ? 'border-red-500 dark:border-red-700' : ''}
-            />
-            {icErr && <p className="text-xs text-red-600 mt-1">{icErr}</p>}
-          </div>
+        <div className="mb-6">
+          <h2 id={headingId} className="text-2xl font-semibold tracking-tight">
+            Update your details
+          </h2>
+          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Keep your name and IC number current so your reports stay aligned.</p>
         </div>
-        {msg && <p className="text-xs text-red-600 mb-2">{msg}</p>}
+        <div className="grid gap-3">
+          <Input label="Full Name" value={fullName} onChange={setFullName} />
+          <Input
+            label="IC Last 4"
+            value={icLast4}
+            onChange={handleIcChange}
+            inputMode="text"
+            pattern="\d{3}[A-Za-z]"
+            maxLength={4}
+            helpText="Format: three digits followed by one letter."
+            errorMessage={icErr}
+          />
+        </div>
+        {msg && (
+          <p className="mt-4 rounded-xl bg-red-50/80 px-3 py-2 text-xs font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300" role="alert">
+            {msg}
+          </p>
+        )}
         <button
           type="submit"
           disabled={!!icErr || icLast4.length !== 4 || !fullName.trim()}
-          className="w-full px-3 py-2 rounded-lg bg-neutral-900 text-white disabled:opacity-50"
+          className="mt-6 w-full rounded-2xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-900/10 transition hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white dark:bg-neutral-100 dark:text-neutral-900 dark:focus-visible:outline-neutral-300"
         >
-          Save
+          Save changes
         </button>
       </form>
     </div>
@@ -325,21 +407,6 @@ function download(filename, text){
   a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 
-// Generic loader for tables (RLS will scope to user; admin sees all via policy)
-function useTable(table){
-  const [rows,setRows]=React.useState([]); const [loading,setLoading]=React.useState(true); const [error,setError]=React.useState("");
-  async function refresh(){
-    setLoading(true);
-    const { data, error } = await supabase.from(table).select('*').order('created_at',{ascending:false});
-    setRows(data||[]); setError(error?.message||""); setLoading(false);
-  }
-  React.useEffect(()=>{ refresh(); const ch = supabase.channel(`${table}-changes`).on('postgres_changes',{event:'*',schema:'public',table}, refresh).subscribe(); return ()=> supabase.removeChannel(ch); },[]);
-  async function insert(row){ const user = (await supabase.auth.getUser()).data.user; const { error } = await supabase.from(table).insert({ ...row, user_id: user.id }); if (error) alert(error.message); }
-  async function remove(id){ const { error } = await supabase.from(table).delete().eq('id', id); if (error) alert(error.message); }
-  async function clearAll(){ if (!confirm('Delete ALL records?')) return; const { error } = await supabase.from(table).delete().neq('id','00000000-0000-0000-0000-000000000000'); if (error) alert(error.message); }
-  return { rows, loading, error, insert, remove, clearAll, refresh };
-}
-
 async function uploadToBucket(bucket, file){
   const ext = file.name.split('.').pop(); const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
   const { data, error } = await supabase.storage.from(bucket).upload(path, file, { upsert:false });
@@ -347,56 +414,102 @@ async function uploadToBucket(bucket, file){
 }
 
 // ========= Reusable UI =========
-function Card({title, children}){return (<div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-4 shadow-sm">{title && <h3 className="text-lg font-semibold mb-3">{title}</h3>}{children}</div>);}
-function FormGrid({children}){return <div className="grid grid-cols-1 gap-2">{children}</div>;}
-function Input({label, value, onChange, type="text", className="", ...props}){
-  const extra = ['date', 'time'].includes(type) ? 'appearance-none h-10' : '';
+function FormGrid({children}){return <div className="grid grid-cols-1 gap-3">{children}</div>;}
+function Input({ label, value, onChange, type = "text", className = "", helpText, errorMessage, id, ...props }) {
+  const { "aria-describedby": ariaDescribedBy, "aria-invalid": ariaInvalid, ...rest } = props;
+  const generatedId = React.useId();
+  const inputId = id ?? generatedId;
+  const extra = ["date", "time"].includes(type) ? "appearance-none h-11" : "";
+  const helpId = helpText ? `${inputId}-help` : undefined;
+  const errorId = errorMessage ? `${inputId}-error` : undefined;
+  const describedBy = [ariaDescribedBy, helpId, errorId].filter(Boolean).join(" ") || undefined;
+
   return (
-    <label className="text-sm">
-      <div className="text-xs text-neutral-500 mb-1">{label}</div>
-      <input
-        type={type}
-        value={value || ""}
-        onChange={e => onChange(e.target.value)}
-                className={`w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 ${extra} ${className}`}
-        {...props}
-      />
-    </label>
+    <div className="text-sm">
+      <label className="block" htmlFor={inputId}>
+        <div className="mb-1 text-xs font-medium uppercase tracking-widest text-neutral-500">{label}</div>
+        <input
+          id={inputId}
+          type={type}
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          aria-describedby={describedBy}
+          aria-invalid={errorMessage ? "true" : ariaInvalid}
+          className={`w-full rounded-xl border border-neutral-200/80 bg-white/85 px-3 py-2 text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-500 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-900/10 dark:border-neutral-700/80 dark:bg-neutral-900/70 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-neutral-400 dark:focus:ring-neutral-100/20 ${extra} ${className}`}
+          {...rest}
+        />
+      </label>
+      {helpText && (
+        <p id={helpId} className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          {helpText}
+        </p>
+      )}
+      {errorMessage && (
+        <p id={errorId} className="mt-1 text-xs font-medium text-red-600 dark:text-red-400" role="alert">
+          {errorMessage}
+        </p>
+      )}
+    </div>
   );
 }
-function TextArea({label, value, onChange}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><textarea value={value||""} onChange={e=>onChange(e.target.value)} className="w-full border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 h-24 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400" /></label>);}
-function Select({label, value, onChange, options}){return (<label className="text-sm"><div className="text-xs text-neutral-500 mb-1">{label}</div><select value={value||""} onChange={e=>onChange(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg"><option value="">-- Select --</option>{options.map(opt=> <option key={opt} value={opt}>{opt}</option>)}</select></label>);}
-function DataTable({columns, rows, onDelete}){
-    const showActions = typeof onDelete === 'function';
+function TextArea({ label, value, onChange, id, helpText, errorMessage, ...props }) {
+  const { "aria-describedby": ariaDescribedBy, "aria-invalid": ariaInvalid, ...rest } = props;
+  const generatedId = React.useId();
+  const textAreaId = id ?? generatedId;
+  const helpId = helpText ? `${textAreaId}-help` : undefined;
+  const errorId = errorMessage ? `${textAreaId}-error` : undefined;
+  const describedBy = [ariaDescribedBy, helpId, errorId].filter(Boolean).join(" ") || undefined;
+
   return (
-    <div className="overflow-x-auto border border-neutral-200 dark:border-neutral-700 rounded-xl">
-      <table className="min-w-full text-sm">
-        <thead className="bg-neutral-50 dark:bg-neutral-800">
-          <tr>
-            {columns.map(c=> <th key={c} className="text-left px-3 py-2 border-b whitespace-nowrap capitalize">{c.replaceAll('_',' ')}</th>)}
-            {showActions && <th className="px-3 py-2 border-b text-right">Actions</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(r=> (
-            <tr key={r.id} className="odd:bg-white even:bg-neutral-50 dark:odd:bg-neutral-900 dark:even:bg-neutral-800">
-              {columns.map(c=> (<td key={c} className="px-3 py-2 border-b align-top whitespace-pre-wrap">{String(r[c]??'')}</td>))}
-              {showActions && <td className="px-3 py-2 border-b text-right"><button onClick={()=>onDelete(r.id)} className="text-red-600 hover:underline">Delete</button></td>}
-            </tr>
-          ))}
-          {rows.length===0 && <tr><td className="px-3 py-6 text-center text-neutral-500 dark:text-neutral-400" colSpan={columns.length + (showActions?1:0)}>No data</td></tr>}
-        </tbody>
-      </table>
+    <div className="text-sm">
+      <label className="block" htmlFor={textAreaId}>
+        <div className="mb-1 text-xs font-medium uppercase tracking-widest text-neutral-500">{label}</div>
+        <textarea
+          id={textAreaId}
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          aria-describedby={describedBy}
+          aria-invalid={errorMessage ? "true" : ariaInvalid}
+          className="h-28 w-full rounded-xl border border-neutral-200/80 bg-white/85 px-3 py-2 text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-500 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-900/10 dark:border-neutral-700/80 dark:bg-neutral-900/70 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-neutral-400 dark:focus:ring-neutral-100/20"
+          {...rest}
+        />
+      </label>
+      {helpText && (
+        <p id={helpId} className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          {helpText}
+        </p>
+      )}
+      {errorMessage && (
+        <p id={errorId} className="mt-1 text-xs font-medium text-red-600 dark:text-red-400" role="alert">
+          {errorMessage}
+        </p>
+      )}
     </div>
+  );
+}
+function Select({label, value, onChange, options}){
+  return (
+    <label className="text-sm">
+      <div className="mb-1 text-xs font-medium uppercase tracking-widest text-neutral-500">{label}</div>
+      <select
+        value={value||""}
+        onChange={e=>onChange(e.target.value)}
+        className="w-full rounded-xl border border-neutral-200/80 bg-white/85 px-3 py-2 text-neutral-900 shadow-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-900/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-600 dark:border-neutral-700/80 dark:bg-neutral-900/70 dark:text-neutral-100 dark:focus:border-neutral-400 dark:focus:ring-neutral-100/20 dark:focus-visible:outline-neutral-300"
+      >
+        <option value="">-- Select --</option>
+        {options.map(opt=> <option key={opt} value={opt}>{opt}</option>)}
+      </select>
+    </label>
   );
 }
 
 function RefreshButton({ onClick }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       aria-label="Refresh"
-      className="p-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+      className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200/80 bg-white/85 text-neutral-600 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-600 dark:border-neutral-700/80 dark:bg-neutral-900/70 dark:text-neutral-300 dark:focus-visible:outline-neutral-300"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -422,6 +535,7 @@ function Dashboard({ session, profile, refreshProfile }){
   const [tab, setTab] = React.useState('dashboard');
   const [showProfile, setShowProfile] = React.useState(false);
   const firstName = profile.full_name?.split(' ')[0] || 'User';
+  const avatarInitial = firstName?.[0]?.toUpperCase() || 'U';
   React.useEffect(() => {
     document.title = `${firstName}'s Site Reporting`;
   }, [firstName]);
@@ -434,17 +548,20 @@ function Dashboard({ session, profile, refreshProfile }){
   ];
   const handleSignOut = () => supabase.auth.signOut();
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-neutral-100 via-white to-neutral-200 text-neutral-900 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 dark:text-neutral-100">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-neutral-200/80 to-transparent blur-3xl dark:from-neutral-800/60" aria-hidden="true" />
       <Header
         title={`${firstName}'s Site Reporting`}
+        subtitle="Live project intelligence"
         tabs={tabs}
         activeTab={tab}
         onTabChange={setTab}
         onEditProfile={() => setShowProfile(true)}
         onSignOut={handleSignOut}
+        avatarInitial={avatarInitial}
       />
 
-      <main className="p-6 grid gap-4 max-w-7xl mx-auto">
+      <main className="relative mx-auto grid max-w-7xl gap-6 px-6 pb-16 pt-10">
         {tab==='dashboard' && <DashboardTab />}
         {tab==='concrete' && <ConcreteLog isAdmin={isAdmin} />}
         {tab==='manpower' && <ManpowerLog isAdmin={isAdmin} />}
@@ -465,9 +582,10 @@ function Dashboard({ session, profile, refreshProfile }){
 }
 
 function DashboardTab(){
-  const { rows: concreteRows } = useTable('concrete');
-  const { rows: manpowerRows } = useTable('manpower');
-  const { rows: materialRows } = useTable('materials');
+  const { rows: concreteRows, loading: concreteLoading, error: concreteError } = useTable('concrete');
+  const { rows: manpowerRows, loading: manpowerLoading, error: manpowerError } = useTable('manpower');
+  const { rows: materialRows, loading: materialLoading, error: materialError } = useTable('materials');
+  const { rows: issueRows, loading: issuesLoading, error: issuesError } = useTable('issues');
 
   const concreteData = React.useMemo(()=>{
     const byDate = {};
@@ -498,83 +616,216 @@ function DashboardTab(){
     return Object.entries(byStatus).map(([name, value])=>({ name, value }));
   },[materialRows]);
 
-  const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#8dd1e1'];
+  const COLORS = ['#4c51bf', '#0f766e', '#f59e0b', '#db2777', '#7c3aed'];
+
+  const summarizeSeries = React.useCallback((data, labelKey, valueKey, unitLabel) => {
+    if (!data.length) return 'No data available.';
+    const preview = data.slice(0, 5);
+    const parts = preview.map((item) => {
+      const label = item?.[labelKey] ?? 'Unknown';
+      const value = item?.[valueKey] ?? 0;
+      return `${label}: ${value}${unitLabel ? ` ${unitLabel}` : ''}`;
+    });
+    return `${parts.join('; ')}${data.length > preview.length ? '; additional data available' : ''}`;
+  }, []);
+
+  const summarizePie = React.useCallback((data) => {
+    if (!data.length) return 'No data available.';
+    return data.map((item) => `${item.name}: ${item.value}`).join('; ');
+  }, []);
+
+  const concreteSummary = summarizeSeries(concreteData, 'date', 'volume', 'm³');
+  const manpowerSummary = summarizeSeries(manpowerData, 'date', 'workers', 'workers');
+  const materialSummary = summarizePie(materialData);
+  const heroLoading = concreteLoading || manpowerLoading || issuesLoading || materialLoading;
+
+  const totalConcreteVolume = React.useMemo(
+    () => concreteRows.reduce((sum, row) => sum + (parseFloat(row.volume) || 0), 0),
+    [concreteRows]
+  );
+  const totalWorkers = React.useMemo(
+    () => manpowerRows.reduce((sum, row) => sum + (parseFloat(row.workers) || 0), 0),
+    [manpowerRows]
+  );
+  const openIssues = React.useMemo(
+    () => issueRows.filter(row => (row.status || '').toLowerCase() !== 'closed').length,
+    [issueRows]
+  );
+  const activeMaterials = React.useMemo(
+    () => materialRows.filter(row => {
+      const status = (row.status || '').toLowerCase();
+      return ['pending', 'approved', 'ordered'].includes(status);
+    }).length,
+    [materialRows]
+  );
 
   return (
-    <section className="grid md:grid-cols-3 gap-4">
-      <Card title="Concrete Volume">
-        <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={concreteData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip cursor={{ fill: 'transparent' }} />
-            <Bar dataKey="volume" fill="#8884d8" />
-          </BarChart>
-        </ResponsiveContainer>
-      </Card>
-      <Card title="Manpower">
-        <ResponsiveContainer width="100%" height={250}>
-          <LineChart data={manpowerData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip cursor={false} />
-            <Line type="monotone" dataKey="workers" stroke="#82ca9d" />
-          </LineChart>
-        </ResponsiveContainer>
-      </Card>
-      <Card title="Material Orders">
-        <ResponsiveContainer width="100%" height={250}>
-          <PieChart>
-            <Pie data={materialData} dataKey="value" nameKey="name" outerRadius={80} label>
-              {materialData.map((entry, index)=>(
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip cursor={{ fill: 'transparent' }} />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
-      </Card>
+    <section className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card title="Concrete poured" subtitle="Total volume logged" className="!p-5">
+          <p className="text-3xl font-semibold tracking-tight" aria-live="polite">
+            {heroLoading ? 'Loading…' : `${totalConcreteVolume.toLocaleString(undefined,{ minimumFractionDigits:1, maximumFractionDigits:1 })} m³`}
+          </p>
+          <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Across {concreteRows.length} pours</p>
+        </Card>
+        <Card title="Workforce deployed" subtitle="Total headcount recorded" className="!p-5">
+          <p className="text-3xl font-semibold tracking-tight" aria-live="polite">
+            {heroLoading ? 'Loading…' : totalWorkers.toLocaleString()}
+          </p>
+          <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">{manpowerRows.length} daily logs submitted</p>
+        </Card>
+        <Card title="Open issues" subtitle="Items still requiring action" className="!p-5">
+          <p className="text-3xl font-semibold tracking-tight" aria-live="polite">
+            {heroLoading ? 'Loading…' : openIssues}
+          </p>
+          <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">{issueRows.length} total issues tracked</p>
+        </Card>
+        <Card title="Active material orders" subtitle="Requests awaiting delivery" className="!p-5">
+          <p className="text-3xl font-semibold tracking-tight" aria-live="polite">
+            {heroLoading ? 'Loading…' : activeMaterials}
+          </p>
+          <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">{materialRows.length} records overall</p>
+        </Card>
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card title="Concrete volume" subtitle="Daily pour totals">
+          <div className="sr-only" id="dashboard-concrete-summary">
+            {concreteSummary}
+          </div>
+          <ResponsiveContainer
+            width="100%"
+            height={250}
+            role="img"
+            aria-label="Bar chart showing logged concrete volume by date"
+            aria-describedby="dashboard-concrete-summary"
+          >
+            <BarChart data={concreteData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip cursor={{ fill: 'transparent' }} />
+              <Bar dataKey="volume" fill={COLORS[0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+        <Card title="Manpower" subtitle="Headcount trend">
+          <div className="sr-only" id="dashboard-manpower-summary">
+            {manpowerSummary}
+          </div>
+          <ResponsiveContainer
+            width="100%"
+            height={250}
+            role="img"
+            aria-label="Line chart showing manpower totals by date"
+            aria-describedby="dashboard-manpower-summary"
+          >
+            <LineChart data={manpowerData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip cursor={false} />
+              <Line type="monotone" dataKey="workers" stroke={COLORS[1]} strokeWidth={3} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Card>
+        <Card title="Materials by status" subtitle="Distribution of requests">
+          <div className="sr-only" id="dashboard-material-summary">
+            {materialSummary}
+          </div>
+          <ResponsiveContainer
+            width="100%"
+            height={250}
+            role="img"
+            aria-label="Pie chart showing material records grouped by status"
+            aria-describedby="dashboard-material-summary"
+          >
+            <PieChart>
+              <Tooltip />
+              <Pie data={materialData} dataKey="value" nameKey="name" outerRadius={100}>
+                {materialData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Legend verticalAlign="bottom" height={36} />
+            </PieChart>
+          </ResponsiveContainer>
+        </Card>
+      </div>
+      {(concreteError || manpowerError || issuesError || materialError) && (
+        <div className="rounded-2xl border border-red-300/80 bg-red-50/80 p-4 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300" role="alert">
+          {concreteError && <p>Concrete data error: {concreteError}</p>}
+          {manpowerError && <p>Manpower data error: {manpowerError}</p>}
+          {issuesError && <p>Issues data error: {issuesError}</p>}
+          {materialError && <p>Materials data error: {materialError}</p>}
+        </div>
+      )}
     </section>
   );
 }
 
-// ========= Sections =========
 function ConcreteLog({isAdmin}){
-  const { rows, insert, remove, clearAll, refresh } = useTable('concrete');
+  const { rows, insert, remove, clearAll, refresh, loading, error } = useTable('concrete');
   const newConcrete = () => ({ date: today(), pour_id:'', location:'', element:'', volume:'', mix:'', supplier:'', start_time:'', end_time:'', cubes:'', supervisor:'', notes:'' });
   const [d,setD]=React.useState(newConcrete());
-  const add = async()=>{ if(!d.date||!d.location||!d.element) return alert('Date, Location, Element required'); await insert(d); setD(newConcrete()); };  
+  const add = async()=>{ if(!d.date||!d.location||!d.element) return alert('Date, Location, Element required'); await insert(d); setD(newConcrete()); };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes","created_at"]; download(`concrete_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
-    <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div><Card title="Concrete Log Form"><FormGrid>
-        <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
-        <Input label="Pour ID / Ref" value={d.pour_id} onChange={v=>setD({...d,pour_id:v})} />
-        <Input label="Location / Zone" value={d.location} onChange={v=>setD({...d,location:v})} />
-        <Input label="Element" value={d.element} onChange={v=>setD({...d,element:v})} />
-        <Input label="Volume (m³)" value={d.volume} onChange={v=>setD({...d,volume:v})} />
-        <Input label="Mix / Grade" value={d.mix} onChange={v=>setD({...d,mix:v})} />
-        <Input label="Supplier" value={d.supplier} onChange={v=>setD({...d,supplier:v})} />
-        <Input label="Start Time" type="time" value={d.start_time} onChange={v=>setD({...d,start_time:v})} />
-        <Input label="End Time" type="time" value={d.end_time} onChange={v=>setD({...d,end_time:v})} />
-        <Input label="Cube Samples (qty)" value={d.cubes} onChange={v=>setD({...d,cubes:v})} />
-        <Input label="Supervisor" value={d.supervisor} onChange={v=>setD({...d,supervisor:v})} />
-        <TextArea label="Notes" value={d.notes} onChange={v=>setD({...d,notes:v})} />
-      </FormGrid>
-      <div className="mt-3 flex gap-2 items-center">
-        <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
-        {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
-      </div></Card></div>
-     <div className="md:col-span-2 min-w-0">
-        <Card title={`Records (${rows.length})`}>
-          <div className="mb-3 flex justify-end">
-                        <RefreshButton onClick={refresh} />
+    <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div>
+        <Card title="Log a Concrete Pour" subtitle="Capture placement details for your records.">
+          <FormGrid>
+            <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
+            <Input label="Pour ID / Ref" value={d.pour_id} onChange={v=>setD({...d,pour_id:v})} />
+            <Input label="Location / Zone" value={d.location} onChange={v=>setD({...d,location:v})} />
+            <Input label="Element" value={d.element} onChange={v=>setD({...d,element:v})} />
+            <Input label="Volume (m³)" value={d.volume} onChange={v=>setD({...d,volume:v})} />
+            <Input label="Mix / Grade" value={d.mix} onChange={v=>setD({...d,mix:v})} />
+            <Input label="Supplier" value={d.supplier} onChange={v=>setD({...d,supplier:v})} />
+            <Input label="Start Time" type="time" value={d.start_time} onChange={v=>setD({...d,start_time:v})} />
+            <Input label="End Time" type="time" value={d.end_time} onChange={v=>setD({...d,end_time:v})} />
+            <Input label="Cubes Taken" value={d.cubes} onChange={v=>setD({...d,cubes:v})} />
+            <Input label="Supervisor" value={d.supervisor} onChange={v=>setD({...d,supervisor:v})} />
+            <TextArea label="Notes" value={d.notes} onChange={v=>setD({...d,notes:v})} />
+          </FormGrid>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={add}
+              className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white dark:bg-neutral-100 dark:text-neutral-900 dark:focus-visible:outline-neutral-300"
+            >
+              Add pour
+            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={exportCSV}
+                className="inline-flex items-center justify-center rounded-xl border border-neutral-300/80 bg-white/80 px-4 py-2 text-sm font-semibold text-neutral-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-600 dark:border-neutral-700/80 dark:bg-neutral-900/70 dark:text-neutral-200 dark:focus-visible:outline-neutral-300"
+              >
+                Export CSV
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={clearAll}
+                className="inline-flex items-center justify-center rounded-xl border border-red-300/80 bg-red-50/80 px-4 py-2 text-sm font-semibold text-red-600 transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500/70 dark:border-red-500/50 dark:bg-red-500/10 dark:text-red-300"
+              >
+                Clear all
+              </button>
+            )}
           </div>
-          <DataTable columns={["date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
+        </Card>
+      </div>
+      <div className="min-w-0 md:col-span-2">
+        <Card title={`Records (${rows.length})`} actions={<div className="ml-auto"><RefreshButton onClick={refresh} /></div>}>
+          <DataTable
+            caption="Concrete pour records"
+            columns={["date","pour_id","location","element","volume","mix","supplier","start_time","end_time","cubes","supervisor","notes"]}
+            rows={rows}
+            onDelete={isAdmin ? remove : undefined}
+            loading={loading}
+            error={error}
+          />
         </Card>
       </div>
     </section>
@@ -582,34 +833,64 @@ function ConcreteLog({isAdmin}){
 }
 
 function ManpowerLog({isAdmin}){
-  const { rows, insert, remove, clearAll, refresh } = useTable('manpower');
+  const { rows, insert, remove, clearAll, refresh, loading, error } = useTable('manpower');
   const newManpower = () => ({ date: today(), contractor:'', trade:'', workers:'', hours:'', zone:'', supervisor:'', notes:'' });
   const [d,setD]=React.useState(newManpower());
   const add = async()=>{ if(!d.date||!d.contractor||!d.trade) return alert('Date, Contractor, Trade required'); await insert(d); setD(newManpower()); };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","contractor","trade","workers","hours","zone","supervisor","notes","created_at"]; download(`manpower_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
-    <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div><Card title="Add Manpower"><FormGrid>
-        <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
-        <Input label="Contractor" value={d.contractor} onChange={v=>setD({...d,contractor:v})} />
-        <Input label="Trade" value={d.trade} onChange={v=>setD({...d,trade:v})} />
-        <Input label="Workers (count)" value={d.workers} onChange={v=>setD({...d,workers:v})} />
-        <Input label="Hours (per worker)" value={d.hours} onChange={v=>setD({...d,hours:v})} />
-        <Input label="Zone / Area" value={d.zone} onChange={v=>setD({...d,zone:v})} />
-        <Input label="Supervisor" value={d.supervisor} onChange={v=>setD({...d,supervisor:v})} />
-        <TextArea label="Notes" value={d.notes} onChange={v=>setD({...d,notes:v})} />
-      </FormGrid>
-      <div className="mt-3 flex gap-2 items-center">
-        <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
-        {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
-      </div></Card></div>
-      <div className="md:col-span-2 min-w-0">
-        <Card title={`Records (${rows.length})`}>
-          <div className="mb-3 flex justify-end">
-            <RefreshButton onClick={refresh} />
+    <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div>
+        <Card title="Track Manpower" subtitle="Log labour resources allocated on site.">
+          <FormGrid>
+            <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
+            <Input label="Contractor" value={d.contractor} onChange={v=>setD({...d,contractor:v})} />
+            <Input label="Trade" value={d.trade} onChange={v=>setD({...d,trade:v})} />
+            <Input label="Workers (count)" value={d.workers} onChange={v=>setD({...d,workers:v})} />
+            <Input label="Hours (per worker)" value={d.hours} onChange={v=>setD({...d,hours:v})} />
+            <Input label="Zone / Area" value={d.zone} onChange={v=>setD({...d,zone:v})} />
+            <Input label="Supervisor" value={d.supervisor} onChange={v=>setD({...d,supervisor:v})} />
+            <TextArea label="Notes" value={d.notes} onChange={v=>setD({...d,notes:v})} />
+          </FormGrid>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={add}
+              className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white dark:bg-neutral-100 dark:text-neutral-900 dark:focus-visible:outline-neutral-300"
+            >
+              Add entry
+            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={exportCSV}
+                className="inline-flex items-center justify-center rounded-xl border border-neutral-300/80 bg-white/80 px-4 py-2 text-sm font-semibold text-neutral-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-600 dark:border-neutral-700/80 dark:bg-neutral-900/70 dark:text-neutral-200 dark:focus-visible:outline-neutral-300"
+              >
+                Export CSV
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={clearAll}
+                className="inline-flex items-center justify-center rounded-xl border border-red-300/80 bg-red-50/80 px-4 py-2 text-sm font-semibold text-red-600 transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500/70 dark:border-red-500/50 dark:bg-red-500/10 dark:text-red-300"
+              >
+                Clear all
+              </button>
+            )}
           </div>
-          <DataTable columns={["date","contractor","trade","workers","hours","zone","supervisor","notes"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
+        </Card>
+      </div>
+      <div className="min-w-0 md:col-span-2">
+        <Card title={`Records (${rows.length})`} actions={<div className="ml-auto"><RefreshButton onClick={refresh} /></div>}>
+          <DataTable
+            caption="Manpower log records"
+            columns={["date","contractor","trade","workers","hours","zone","supervisor","notes"]}
+            rows={rows}
+            onDelete={isAdmin ? remove : undefined}
+            loading={loading}
+            error={error}
+          />
         </Card>
       </div>
     </section>
@@ -617,7 +898,7 @@ function ManpowerLog({isAdmin}){
 }
 
 function IssuesLog({isAdmin}){
-  const { rows, insert, remove, clearAll, refresh } = useTable('issues');
+  const { rows, insert, remove, clearAll, refresh, loading, error } = useTable('issues');
   const newIssue = () => ({ date: today(), location:'', description:'', severity:'', status:'Open', raised_by:'', owner:'', due_by: today(), photo_url:'' });
   const [d,setD]=React.useState(newIssue());
   const [file,setFile]=React.useState(null);
@@ -628,8 +909,9 @@ function IssuesLog({isAdmin}){
   };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","location","description","severity","status","raised_by","owner","due_by","photo_url","created_at"]; download(`issues_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
-    <section className="grid md:grid-cols-3 gap-4">
-      <div><Card title="Add Issue"><FormGrid>
+    <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div>
+        <Card title="Report Site Issues" subtitle="Flag safety, quality or coordination blockers."><FormGrid>
         <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
         <Input label="Location / Zone" value={d.location} onChange={v=>setD({...d,location:v})} />
         <TextArea label="Description" value={d.description} onChange={v=>setD({...d,description:v})} />
@@ -638,19 +920,48 @@ function IssuesLog({isAdmin}){
         <Input label="Raised By" value={d.raised_by} onChange={v=>setD({...d,raised_by:v})} />
         <Input label="Owner" value={d.owner} onChange={v=>setD({...d,owner:v})} />
         <Input label="Due By" type="date" value={d.due_by} onChange={v=>setD({...d,due_by:v})} />
-        <label className="text-sm"><div className="text-xs text-neutral-500 mb-1">Photo</div><input type="file" accept="image/*" onChange={e=>setFile(e.target.files?.[0]||null)} /></label>
+        <label className="text-sm">
+          <div className="mb-1 text-xs font-medium uppercase tracking-widest text-neutral-500">Photo</div>
+          <input type="file" accept="image/*" onChange={e=>setFile(e.target.files?.[0]||null)} className="w-full rounded-xl border border-dashed border-neutral-300/80 bg-white/60 px-3 py-3 text-xs text-neutral-500 shadow-sm transition file:mr-3 file:rounded-lg file:border-0 file:bg-neutral-900 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:border-neutral-400 focus:border-neutral-400 focus:ring-2 focus:ring-neutral-900/10 dark:border-neutral-700/80 dark:bg-neutral-900/60 dark:text-neutral-300 dark:file:bg-neutral-100 dark:file:text-neutral-900" />
+        </label>
       </FormGrid>
-      <div className="mt-3 flex gap-2 items-center">
-        <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
-        {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={add}
+          className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white dark:bg-neutral-100 dark:text-neutral-900 dark:focus-visible:outline-neutral-300"
+        >
+          Add issue
+        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={exportCSV}
+            className="inline-flex items-center justify-center rounded-xl border border-neutral-300/80 bg-white/80 px-4 py-2 text-sm font-semibold text-neutral-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-600 dark:border-neutral-700/80 dark:bg-neutral-900/70 dark:text-neutral-200 dark:focus-visible:outline-neutral-300"
+          >
+            Export CSV
+          </button>
+        )}
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="inline-flex items-center justify-center rounded-xl border border-red-300/80 bg-red-50/80 px-4 py-2 text-sm font-semibold text-red-600 transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500/70 dark:border-red-500/50 dark:bg-red-500/10 dark:text-red-300"
+          >
+            Clear all
+          </button>
+        )}
       </div></Card></div>
-      <div className="md:col-span-2 min-w-0">
-        <Card title={`Records (${rows.length})`}>
-          <div className="mb-3 flex justify-end">
-            <RefreshButton onClick={refresh} />
-          </div>
-          <DataTable columns={["date","location","description","severity","status","raised_by","owner","due_by","photo_url"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
+      <div className="min-w-0 md:col-span-2">
+        <Card title={`Records (${rows.length})`} actions={<div className="ml-auto"><RefreshButton onClick={refresh} /></div>}>
+          <DataTable
+            caption="Issue log records"
+            columns={["date","location","description","severity","status","raised_by","owner","due_by","photo_url"]}
+            rows={rows}
+            onDelete={isAdmin ? remove : undefined}
+            loading={loading}
+            error={error}
+          />
         </Card>
       </div>
     </section>
@@ -658,7 +969,7 @@ function IssuesLog({isAdmin}){
 }
 
 function MaterialsLog({isAdmin}){
-  const { rows, insert, remove, clearAll, refresh } = useTable('materials');
+  const { rows, insert, remove, clearAll, refresh, loading, error } = useTable('materials');
   const newMaterial = () => ({ date: today(), type:'Request', item:'', spec:'', qty:'', unit:'', needed_by: today(), supplier:'', po:'', status:'Pending', location:'', requester:'', photo_url:'' });
   const [d,setD]=React.useState(newMaterial());
   const [file,setFile]=React.useState(null);
@@ -669,8 +980,9 @@ function MaterialsLog({isAdmin}){
   };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url","created_at"]; download(`materials_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
-    <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div><Card title="Add Material Record"><FormGrid>
+    <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div>
+        <Card title="Manage Materials" subtitle="Track requests and deliveries at a glance."><FormGrid>
         <Input label="Date" type="date" value={d.date} onChange={v=>setD({...d,date:v})} />
         <Select label="Type" value={d.type} onChange={v=>setD({...d,type:v})} options={["Request","Delivery"]} />
         <Input label="Item" value={d.item} onChange={v=>setD({...d,item:v})} />
@@ -682,19 +994,48 @@ function MaterialsLog({isAdmin}){
         <Select label="Status" value={d.status} onChange={v=>setD({...d,status:v})} options={["Pending","Approved","Ordered","Delivered","Cancelled"]} />
         <Input label="Location / Zone" value={d.location} onChange={v=>setD({...d,location:v})} />
         <Input label="Requester" value={d.requester} onChange={v=>setD({...d,requester:v})} />
-        <label className="text-sm"><div className="text-xs text-neutral-500 mb-1">Delivery / MR Photo</div><input type="file" accept="image/*" onChange={e=>setFile(e.target.files?.[0]||null)} /></label>
+        <label className="text-sm">
+          <div className="mb-1 text-xs font-medium uppercase tracking-widest text-neutral-500">Delivery / MR Photo</div>
+          <input type="file" accept="image/*" onChange={e=>setFile(e.target.files?.[0]||null)} className="w-full rounded-xl border border-dashed border-neutral-300/80 bg-white/60 px-3 py-3 text-xs text-neutral-500 shadow-sm transition file:mr-3 file:rounded-lg file:border-0 file:bg-neutral-900 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:border-neutral-400 focus:border-neutral-400 focus:ring-2 focus:ring-neutral-900/10 dark:border-neutral-700/80 dark:bg-neutral-900/60 dark:text-neutral-300 dark:file:bg-neutral-100 dark:file:text-neutral-900" />
+        </label>
       </FormGrid>
-      <div className="mt-3 flex gap-2 items-center">
-        <button onClick={add} className="px-3 py-2 rounded-lg bg-neutral-900 text-white">Add</button>
-        {isAdmin && <button onClick={exportCSV} className="px-3 py-2 rounded-lg border">Export CSV</button>}
-        {isAdmin && <button onClick={clearAll} className="px-3 py-2 rounded-lg border border-red-300 text-red-700">Clear All</button>}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={add}
+          className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white dark:bg-neutral-100 dark:text-neutral-900 dark:focus-visible:outline-neutral-300"
+        >
+          Add record
+        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={exportCSV}
+            className="inline-flex items-center justify-center rounded-xl border border-neutral-300/80 bg-white/80 px-4 py-2 text-sm font-semibold text-neutral-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-600 dark:border-neutral-700/80 dark:bg-neutral-900/70 dark:text-neutral-200 dark:focus-visible:outline-neutral-300"
+          >
+            Export CSV
+          </button>
+        )}
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="inline-flex items-center justify-center rounded-xl border border-red-300/80 bg-red-50/80 px-4 py-2 text-sm font-semibold text-red-600 transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500/70 dark:border-red-500/50 dark:bg-red-500/10 dark:text-red-300"
+          >
+            Clear all
+          </button>
+        )}
       </div></Card></div>
-      <div className="md:col-span-2 min-w-0">
-        <Card title={`Records (${rows.length})`}>
-          <div className="mb-3 flex justify-end">
-            <RefreshButton onClick={refresh} />
-          </div>
-          <DataTable columns={["date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url"]} rows={rows} onDelete={isAdmin ? remove : undefined} />
+      <div className="min-w-0 md:col-span-2">
+        <Card title={`Records (${rows.length})`} actions={<div className="ml-auto"><RefreshButton onClick={refresh} /></div>}>
+          <DataTable
+            caption="Material records"
+            columns={["date","type","item","spec","qty","unit","needed_by","supplier","po","status","location","requester","photo_url"]}
+            rows={rows}
+            onDelete={isAdmin ? remove : undefined}
+            loading={loading}
+            error={error}
+          />
         </Card>
       </div>
     </section>
