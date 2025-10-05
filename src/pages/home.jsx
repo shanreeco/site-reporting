@@ -42,6 +42,11 @@ export default function HomePage() {
     loading: materialLoading,
     error: materialError,
   } = useTable("materials");
+  const {
+    rows: bbsRows,
+    loading: bbsLoading,
+    error: bbsError,
+  } = useTable("bbs_schedule");
 
   const concreteData = React.useMemo(() => {
     const byDate = {};
@@ -72,6 +77,16 @@ export default function HomePage() {
     return Object.entries(byStatus).map(([name, value]) => ({ name, value }));
   }, [materialRows]);
 
+  const bbsDeliveryData = React.useMemo(() => {
+    const byDate = {};
+    for (const row of bbsRows) {
+      const date = row.delivery_date || "";
+      const weight = parseFloat(row.weight_tons) || 0;
+      byDate[date] = (byDate[date] || 0) + weight;
+    }
+    return Object.entries(byDate).map(([date, weight]) => ({ date, weight }));
+  }, [bbsRows]);
+
   const totalConcrete = React.useMemo(
     () => concreteRows.reduce((sum, row) => sum + (parseFloat(row.volume) || 0), 0),
     [concreteRows]
@@ -91,6 +106,26 @@ export default function HomePage() {
         return ["pending", "approved", "ordered"].includes(status);
       }).length,
     [materialRows]
+  );
+  const upcomingBbsDeliveries = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return bbsRows.filter((row) => {
+      const value = row.delivery_date;
+      if (!value) return false;
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return false;
+      return date >= today;
+    });
+  }, [bbsRows]);
+  const upcomingBbsCount = upcomingBbsDeliveries.length;
+  const upcomingBbsWeight = React.useMemo(
+    () =>
+      upcomingBbsDeliveries.reduce(
+        (sum, row) => sum + (parseFloat(row.weight_tons) || 0),
+        0
+      ),
+    [upcomingBbsDeliveries]
   );
 
   const summarizeSeries = React.useCallback((data, labelKey, valueKey, valueLabel) => {
@@ -114,8 +149,10 @@ export default function HomePage() {
   const concreteSummary = summarizeSeries(concreteData, "date", "volume", "m³");
   const manpowerSummary = summarizeSeries(manpowerData, "date", "workers", "workers");
   const materialSummary = summarizePie(materialsByStatus);
+  const bbsDeliverySummary = summarizeSeries(bbsDeliveryData, "date", "weight", "t");
 
-  const heroIsLoading = concreteLoading || manpowerLoading || issuesLoading || materialLoading;
+  const heroIsLoading =
+    concreteLoading || manpowerLoading || issuesLoading || materialLoading || bbsLoading;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-neutral-100 via-white to-neutral-200 text-neutral-900 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 dark:text-neutral-100">
@@ -212,6 +249,19 @@ export default function HomePage() {
                   {heroIsLoading ? "Loading…" : activeMaterials}
                 </dd>
               </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
+                  Upcoming BBS drops
+                </dt>
+                <dd className="mt-2 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                  {heroIsLoading
+                    ? "Loading…"
+                    : `${upcomingBbsCount} / ${upcomingBbsWeight.toLocaleString(undefined, {
+                        minimumFractionDigits: 1,
+                        maximumFractionDigits: 1,
+                      })} t`}
+                </dd>
+              </div>
             </dl>
           </Card>
         </section>
@@ -223,7 +273,7 @@ export default function HomePage() {
               These interactive charts aggregate the latest data captured by the site team.
             </p>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Card title="Concrete volume" subtitle="Daily pour totals">
               <div className="sr-only" id="concrete-summary">
                 {concreteSummary}
@@ -241,6 +291,26 @@ export default function HomePage() {
                   <YAxis />
                   <Tooltip cursor={{ fill: "transparent" }} />
                   <Bar dataKey="volume" fill="#111827" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+            <Card title="BBS deliveries" subtitle="Tonnage scheduled by date">
+              <div className="sr-only" id="bbs-summary">
+                {bbsDeliverySummary}
+              </div>
+              <ResponsiveContainer
+                width="100%"
+                height={260}
+                role="img"
+                aria-label="Bar chart showing BBS delivery tonnage by date"
+                aria-describedby="bbs-summary"
+              >
+                <BarChart data={bbsDeliveryData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip cursor={{ fill: "transparent" }} />
+                  <Bar dataKey="weight" fill="#0f172a" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </Card>
@@ -367,6 +437,34 @@ export default function HomePage() {
                 maxRows={8}
                 loading={materialLoading}
                 error={materialError}
+              />
+            </Card>
+            <Card
+              title="BBS delivery schedule"
+              subtitle="Upcoming reinforcement drops"
+              actions={
+                <span className="ml-auto text-xs text-neutral-600 dark:text-neutral-300">
+                  Showing latest 8 of {bbsRows.length}
+                </span>
+              }
+            >
+              <DataTable
+                caption="Planned BBS deliveries"
+                columns={[
+                  "delivery_date",
+                  "element",
+                  "bar_mark",
+                  "diameter_mm",
+                  "length_m",
+                  "weight_tons",
+                  "supplier",
+                  "status",
+                  "remarks",
+                ]}
+                rows={bbsRows}
+                maxRows={8}
+                loading={bbsLoading}
+                error={bbsError}
               />
             </Card>
           </div>
