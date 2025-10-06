@@ -398,10 +398,14 @@ export default function ReportsPage(){
   if (profile === undefined) return <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">Loading profile…</div>;
   if (err) return <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-red-700 dark:text-red-300">{err}</div>;
   if (profile === null) return (
-    <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-red-700 dark:text-red-300">
-      <div className="text-center">
-        <p>Profile not found.</p>
-        <button onClick={()=>supabase.auth.signOut()} className="underline mt-2">Sign out</button>
+    <div className="min-h-screen grid place-items-center bg-neutral-50 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <span className="relative inline-flex h-12 w-12 items-center justify-center">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-400/50" aria-hidden="true"></span>
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border-4 border-neutral-200 border-t-neutral-900 dark:border-neutral-700 dark:border-t-neutral-200 animate-spin" aria-hidden="true"></span>
+        </span>
+        <p className="text-sm font-medium">Setting up your profile…</p>
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">This may take just a moment. You’ll be redirected automatically.</p>
       </div>
     </div>
   );
