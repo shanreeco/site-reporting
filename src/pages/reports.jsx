@@ -1223,10 +1223,55 @@ function ConcreteLog({isAdmin}){
 
 function ManpowerLog({isAdmin}){
   const { rows, insert, remove, clearAll, refresh, loading, error } = useTable('manpower');
-  const newManpower = () => ({ date: today(), contractor:'', trade:'', workers:'', hours:'', zone:'', supervisor:'', notes:'' });
+  const newManpower = () => ({
+    date: today(),
+    contractor:'',
+    trade:'',
+    workers:'',
+    shift:'',
+    level:'',
+    zone_area:'',
+    zone_section:'',
+    supervisor:'',
+    notes:'',
+    photo_url:'',
+  });
   const [d,setD]=React.useState(newManpower());
-  const add = async()=>{ if(!d.date||!d.contractor||!d.trade) return alert('Date, Contractor, Trade required'); await insert(d); setD(newManpower()); };
-  const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","contractor","trade","workers","hours","zone","supervisor","notes","created_at"]; download(`manpower_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
+  const [file,setFile]=React.useState(null);
+  const add = async()=>{
+    if(!d.date||!d.contractor||!d.trade) return alert('Date, Contractor, Trade required');
+    let url=d.photo_url;
+    if(file){
+      try{
+        url = await uploadToBucket('manpower-photos', file);
+      }catch(e){
+        alert(e.message);
+        return;
+      }
+    }
+    const zoneValue = d.zone_area ? (d.zone_section ? `${d.zone_area}-${d.zone_section}` : d.zone_area) : '';
+    const payload = {
+      date: d.date,
+      contractor: d.contractor,
+      trade: d.trade,
+      workers: d.workers,
+      shift: d.shift,
+      hours: d.shift,
+      level: d.level,
+      zone: zoneValue,
+      supervisor: d.supervisor,
+      notes: d.notes,
+      photo_url: url,
+    };
+    await insert(payload);
+    setD(newManpower());
+    setFile(null);
+  };
+  const exportCSV = ()=>{
+    if(!isAdmin) return;
+    const headers=["id","user_id","date","contractor","trade","workers","shift","level","zone","supervisor","notes","photo_url","created_at"];
+    download(`manpower_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers));
+  };
   return (
     <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
       <div>
@@ -1236,10 +1281,23 @@ function ManpowerLog({isAdmin}){
             <Input label="Contractor" value={d.contractor} onChange={v=>setD({...d,contractor:v})} />
             <Input label="Trade" value={d.trade} onChange={v=>setD({...d,trade:v})} />
             <Input label="Workers (count)" value={d.workers} onChange={v=>setD({...d,workers:v})} />
-            <Input label="Hours (per worker)" value={d.hours} onChange={v=>setD({...d,hours:v})} />
-            <Input label="Zone / Area" value={d.zone} onChange={v=>setD({...d,zone:v})} />
+            <Select label="Shift" value={d.shift} onChange={v=>setD({...d,shift:v})} options={["AM","PM","Evening"]} />
+            <Select label="Level" value={d.level} onChange={v=>setD({...d,level:v})} options={["Basement","L1","L2","L3","L4","L5","L6","L7","L8","L9","L10"]} />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Select label="Zone / Area" value={d.zone_area} onChange={v=>setD({...d,zone_area:v})} options={["A","B","C","D","E"]} />
+              <Select label="Sub Zone" value={d.zone_section} onChange={v=>setD({...d,zone_section:v})} options={["1","2"]} />
+            </div>
             <Input label="Supervisor" value={d.supervisor} onChange={v=>setD({...d,supervisor:v})} />
             <TextArea label="Notes" value={d.notes} onChange={v=>setD({...d,notes:v})} />
+            <label className="text-sm">
+              <div className="mb-1 text-xs font-medium uppercase tracking-widest text-neutral-500">Photo</div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={e=>setFile(e.target.files?.[0]||null)}
+                className="w-full rounded-xl border border-dashed border-neutral-300/80 bg-white/60 px-3 py-3 text-xs text-neutral-500 shadow-sm transition file:mr-3 file:rounded-lg file:border-0 file:bg-neutral-900 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:border-neutral-400 focus:border-neutral-400 focus:ring-2 focus:ring-neutral-900/10 dark:border-neutral-700/80 dark:bg-neutral-900/60 dark:text-neutral-300 dark:file:bg-neutral-100 dark:file:text-neutral-900"
+              />
+            </label>
           </FormGrid>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <button
@@ -1274,7 +1332,7 @@ function ManpowerLog({isAdmin}){
         <Card title={`Records (${rows.length})`} actions={<div className="ml-auto"><RefreshButton onClick={refresh} /></div>}>
           <DataTable
             caption="Manpower log records"
-            columns={["date","contractor","trade","workers","hours","zone","supervisor","notes"]}
+            columns={["date","contractor","trade","workers","shift","level","zone","supervisor","notes","photo_url"]}
             rows={rows}
             onDelete={isAdmin ? remove : undefined}
             loading={loading}

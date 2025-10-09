@@ -571,7 +571,7 @@ export default function HomePage() {
             >
               <DataTable
                 caption="Recent manpower log entries"
-                columns={["date", "contractor", "trade", "workers", "hours", "zone", "supervisor"]}
+                columns={["date", "contractor", "trade", "workers", "shift", "level", "zone", "supervisor"]}
                 rows={manpowerRows}
                 maxRows={8}
                 loading={manpowerLoading}
