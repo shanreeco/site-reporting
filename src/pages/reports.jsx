@@ -6,6 +6,16 @@ import { useTable } from "../hooks/useTable";
 import { useDailyTasks, TASK_STATUSES } from "../hooks/useDailyTasks";
 import { supabase, MISCONFIGURED } from "../services/supabase";
 import {
+  SHIFT_OPTIONS,
+  LEVEL_OPTIONS,
+  ZONE_LETTERS,
+  ZONE_NUMBERS,
+  formatManpowerZone,
+  parseManpowerZone,
+  buildManpowerNotes,
+  splitManpowerNotes,
+} from "../utils/manpower";
+import {
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -1223,9 +1233,58 @@ function ConcreteLog({isAdmin}){
 
 function ManpowerLog({isAdmin}){
   const { rows, insert, remove, clearAll, refresh, loading, error } = useTable('manpower');
-  const newManpower = () => ({ date: today(), contractor:'', trade:'', workers:'', hours:'', zone:'', supervisor:'', notes:'' });
+  const newManpower = () => ({
+    date: today(),
+    contractor: '',
+    trade: '',
+    workers: '',
+    shift: '',
+    level: '',
+    zoneLetter: '',
+    zoneNumber: '',
+    supervisor: '',
+    notes: '',
+  });
   const [d,setD]=React.useState(newManpower());
-  const add = async()=>{ if(!d.date||!d.contractor||!d.trade) return alert('Date, Contractor, Trade required'); await insert(d); setD(newManpower()); };
+  const [file,setFile]=React.useState(null);
+  const formattedRows = React.useMemo(() => rows.map((row) => {
+    const { level, zoneLetter, zoneNumber } = parseManpowerZone(row.zone);
+    const { notesText, photoUrl } = splitManpowerNotes(row.notes);
+    const zoneArea = zoneLetter ? `Zone ${zoneLetter}${zoneNumber ? `-${zoneNumber}` : ''}` : (row.zone || '');
+    return {
+      ...row,
+      shift: row.hours || '',
+      level: level || '',
+      zone_area: zoneArea,
+      notes: notesText,
+      photo_url: photoUrl || '',
+    };
+  }), [rows]);
+  const add = async()=>{
+    if(!d.date||!d.contractor||!d.trade) return alert('Date, Contractor, Trade required');
+    let photoUrl = '';
+    if(file){
+      try{
+        photoUrl = await uploadToBucket('manpower-photos', file);
+      }catch(e){
+        alert(e.message);
+      }
+    }
+    const zoneValue = formatManpowerZone(d.level, d.zoneLetter, d.zoneNumber);
+    const notesValue = buildManpowerNotes(d.notes, photoUrl);
+    await insert({
+      date: d.date,
+      contractor: d.contractor,
+      trade: d.trade,
+      workers: d.workers,
+      hours: d.shift,
+      zone: zoneValue,
+      supervisor: d.supervisor,
+      notes: notesValue,
+    });
+    setD(newManpower());
+    setFile(null);
+  };
   const exportCSV = ()=>{ if(!isAdmin) return; const headers=["id","user_id","date","contractor","trade","workers","hours","zone","supervisor","notes","created_at"]; download(`manpower_${new Date().toISOString().slice(0,10)}.csv`, toCSV(rows, headers)); };
   return (
     <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -1236,10 +1295,23 @@ function ManpowerLog({isAdmin}){
             <Input label="Contractor" value={d.contractor} onChange={v=>setD({...d,contractor:v})} />
             <Input label="Trade" value={d.trade} onChange={v=>setD({...d,trade:v})} />
             <Input label="Workers (count)" value={d.workers} onChange={v=>setD({...d,workers:v})} />
-            <Input label="Hours (per worker)" value={d.hours} onChange={v=>setD({...d,hours:v})} />
-            <Input label="Zone / Area" value={d.zone} onChange={v=>setD({...d,zone:v})} />
+            <Select label="Shift" value={d.shift} onChange={v=>setD({...d,shift:v})} options={SHIFT_OPTIONS} />
+            <Select label="Level" value={d.level} onChange={v=>setD({...d,level:v})} options={LEVEL_OPTIONS} />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Select label="Zone" value={d.zoneLetter} onChange={v=>setD({...d,zoneLetter:v})} options={ZONE_LETTERS} />
+              <Select label="Area" value={d.zoneNumber} onChange={v=>setD({...d,zoneNumber:v})} options={ZONE_NUMBERS} />
+            </div>
             <Input label="Supervisor" value={d.supervisor} onChange={v=>setD({...d,supervisor:v})} />
             <TextArea label="Notes" value={d.notes} onChange={v=>setD({...d,notes:v})} />
+            <label className="text-sm">
+              <div className="mb-1 text-xs font-medium uppercase tracking-widest text-neutral-500">Upload Photo</div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={e=>setFile(e.target.files?.[0]||null)}
+                className="w-full rounded-xl border border-dashed border-neutral-300/80 bg-white/60 px-3 py-3 text-xs text-neutral-500 shadow-sm transition file:mr-3 file:rounded-lg file:border-0 file:bg-neutral-900 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:border-neutral-400 focus:border-neutral-400 focus:ring-2 focus:ring-neutral-900/10 dark:border-neutral-700/80 dark:bg-neutral-900/60 dark:text-neutral-300 dark:file:bg-neutral-100 dark:file:text-neutral-900"
+              />
+            </label>
           </FormGrid>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <button
@@ -1274,8 +1346,8 @@ function ManpowerLog({isAdmin}){
         <Card title={`Records (${rows.length})`} actions={<div className="ml-auto"><RefreshButton onClick={refresh} /></div>}>
           <DataTable
             caption="Manpower log records"
-            columns={["date","contractor","trade","workers","hours","zone","supervisor","notes"]}
-            rows={rows}
+            columns={["date","contractor","trade","workers","shift","level","zone_area","supervisor","notes","photo_url"]}
+            rows={formattedRows}
             onDelete={isAdmin ? remove : undefined}
             loading={loading}
             error={error}
