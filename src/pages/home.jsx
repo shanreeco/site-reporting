@@ -117,7 +117,7 @@ export default function HomePage() {
         const zoneArea = zoneLetter ? `Zone ${zoneLetter}${zoneNumber ? `-${zoneNumber}` : ""}` : row.zone || "";
         return {
           ...row,
-          shift: row.hours || "",
+          shift: row.shift || row.hours || "",
           level: level || "",
           zone_area: zoneArea,
           photo_url: photoUrl || "",
