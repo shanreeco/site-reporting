@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Card from "../components/Card";
 import DataTable from "../components/DataTable";
 import { useTable } from "../hooks/useTable";
+import { parseManpowerZone, splitManpowerNotes } from "../utils/manpower";
 import { usePublicDailyTasks } from "../hooks/usePublicDailyTasks";
 import {
   ResponsiveContainer,
@@ -108,6 +109,22 @@ export default function HomePage() {
     }
     return Object.entries(byDate).map(([date, workers]) => ({ date, workers }));
   }, [manpowerRows]);
+  const manpowerDisplayRows = React.useMemo(
+    () =>
+      manpowerRows.map((row) => {
+        const { level, zoneLetter, zoneNumber } = parseManpowerZone(row.zone);
+        const { photoUrl } = splitManpowerNotes(row.notes);
+        const zoneArea = zoneLetter ? `Zone ${zoneLetter}${zoneNumber ? `-${zoneNumber}` : ""}` : row.zone || "";
+        return {
+          ...row,
+          shift: row.hours || "",
+          level: level || "",
+          zone_area: zoneArea,
+          photo_url: photoUrl || "",
+        };
+      }),
+    [manpowerRows]
+  );
 
   const materialsByStatus = React.useMemo(() => {
     const byStatus = {};
@@ -571,8 +588,8 @@ export default function HomePage() {
             >
               <DataTable
                 caption="Recent manpower log entries"
-                columns={["date", "contractor", "trade", "workers", "shift", "level", "zone", "supervisor"]}
-                rows={manpowerRows}
+                columns={["date", "contractor", "trade", "workers", "shift", "level", "zone_area", "supervisor", "photo_url"]}
+                rows={manpowerDisplayRows}
                 maxRows={8}
                 loading={manpowerLoading}
                 error={manpowerError}
