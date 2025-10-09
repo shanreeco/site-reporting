@@ -440,10 +440,37 @@ function download(filename, text){
   a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 
+const MANPOWER_BUCKET_PREFERENCES = Array.from(
+  new Set(
+    [
+      import.meta.env?.VITE_SUPABASE_MANPOWER_BUCKET,
+      "manpower-photos",
+      "manpower_photos",
+    ].filter(Boolean),
+  ),
+);
+
 async function uploadToBucket(bucket, file){
   const ext = file.name.split('.').pop(); const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-  const { data, error } = await supabase.storage.from(bucket).upload(path, file, { upsert:false });
-  if (error) throw error; const { data:pub } = await supabase.storage.from(bucket).getPublicUrl(data.path); return pub.publicUrl;
+  const candidates = bucket === 'manpower-photos' ? MANPOWER_BUCKET_PREFERENCES : [bucket];
+  let lastError = null;
+
+  for (const target of candidates){
+    const { data, error } = await supabase.storage.from(target).upload(path, file, { upsert:false });
+    if (!error){
+      const { data:pub } = await supabase.storage.from(target).getPublicUrl(data.path);
+      return pub.publicUrl;
+    }
+
+    lastError = error;
+    const message = (error?.message || "").toLowerCase();
+    if (!message.includes('bucket not found')){
+      throw error;
+    }
+  }
+
+  if (lastError) throw lastError;
+  throw new Error(`Unable to upload file to bucket: ${bucket}`);
 }
 
 // ========= Reusable UI =========
@@ -1232,7 +1259,7 @@ function ConcreteLog({isAdmin}){
 }
 
 function ManpowerLog({isAdmin}){
-  const { rows, insert, remove, clearAll, refresh, loading, error } = useTable('manpower');
+  const { rows, remove, clearAll, refresh, loading, error } = useTable('manpower');
   const newManpower = () => ({
     date: today(),
     contractor: '',
@@ -1247,13 +1274,19 @@ function ManpowerLog({isAdmin}){
   });
   const [d,setD]=React.useState(newManpower());
   const [file,setFile]=React.useState(null);
+  const [supportsHoursColumn, setSupportsHoursColumn] = React.useState(true);
+  React.useEffect(() => {
+    if (rows.length === 0) return;
+    const hasHours = rows.some((row) => Object.prototype.hasOwnProperty.call(row, "hours"));
+    setSupportsHoursColumn(hasHours);
+  }, [rows]);
   const formattedRows = React.useMemo(() => rows.map((row) => {
     const { level, zoneLetter, zoneNumber } = parseManpowerZone(row.zone);
     const { notesText, photoUrl } = splitManpowerNotes(row.notes);
     const zoneArea = zoneLetter ? `Zone ${zoneLetter}${zoneNumber ? `-${zoneNumber}` : ''}` : (row.zone || '');
     return {
       ...row,
-      shift: row.hours || '',
+      shift: row.shift || row.hours || '',
       level: level || '',
       zone_area: zoneArea,
       notes: notesText,
@@ -1272,16 +1305,37 @@ function ManpowerLog({isAdmin}){
     }
     const zoneValue = formatManpowerZone(d.level, d.zoneLetter, d.zoneNumber);
     const notesValue = buildManpowerNotes(d.notes, photoUrl);
-    await insert({
+    const user = (await supabase.auth.getUser()).data.user;
+    const basePayload = {
       date: d.date,
       contractor: d.contractor,
       trade: d.trade,
       workers: d.workers,
-      hours: d.shift,
+      shift: d.shift,
       zone: zoneValue,
       supervisor: d.supervisor,
       notes: notesValue,
-    });
+      user_id: user?.id,
+    };
+    const attemptInsert = async (payload) => {
+      const { error: insertError } = await supabase.from('manpower').insert(payload);
+      return insertError;
+    };
+    let insertError = await attemptInsert(
+      supportsHoursColumn ? { ...basePayload, hours: d.shift } : basePayload,
+    );
+    if (insertError) {
+      const message = (insertError.message || "").toLowerCase();
+      const hoursMissing = message.includes("'hours' column") || message.includes("column hours");
+      if (supportsHoursColumn && hoursMissing) {
+        setSupportsHoursColumn(false);
+        insertError = await attemptInsert(basePayload);
+      }
+    }
+    if (insertError) {
+      alert(insertError.message);
+      return;
+    }
     setD(newManpower());
     setFile(null);
   };
